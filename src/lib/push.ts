@@ -17,6 +17,21 @@ export const pushSupported = () =>
   "PushManager" in window &&
   PUBLIC_KEY !== "";
 
+/**
+ * `navigator.serviceWorker.ready` never settles when nothing is registered —
+ * on the dev server, where registration is skipped, awaiting it hangs forever
+ * and the caller silently does nothing. Race it against a timeout.
+ */
+async function readyRegistration(timeoutMs = 5000) {
+  if (!("serviceWorker" in navigator)) return null;
+  const existing = await navigator.serviceWorker.getRegistration();
+  if (existing) return existing;
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+  ]);
+}
+
 /** The applicationServerKey has to be raw bytes, not the base64url string. */
 function decodeKey(base64url: string) {
   const padded = (base64url + "=".repeat((4 - (base64url.length % 4)) % 4))
@@ -30,7 +45,8 @@ function decodeKey(base64url: string) {
 export async function subscribeToPush(): Promise<boolean> {
   if (!pushSupported()) return false;
   try {
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await readyRegistration();
+    if (!registration) return false;
     const existing = await registration.pushManager.getSubscription();
     const subscription =
       existing ??
@@ -54,7 +70,8 @@ export async function subscribeToPush(): Promise<boolean> {
 export async function unsubscribeFromPush() {
   if (!pushSupported()) return;
   try {
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await readyRegistration();
+    if (!registration) return;
     const subscription = await registration.pushManager.getSubscription();
     if (!subscription) return;
     await fetch("/api/push/subscribe", {

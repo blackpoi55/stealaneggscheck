@@ -6,12 +6,14 @@ export default function Switch({
   label,
   hint,
   title,
+  disabled,
 }: {
   checked: boolean;
   onChange: () => void;
   label: string;
   hint?: string;
   title?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
@@ -20,7 +22,8 @@ export default function Switch({
       aria-checked={checked}
       onClick={onChange}
       title={title}
-      className="flex items-center gap-2.5 rounded-xl px-1 py-1 text-left transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-candy-500"
+      disabled={disabled}
+      className="flex items-center gap-2.5 rounded-xl px-1 py-1 text-left transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-candy-500 disabled:cursor-wait disabled:opacity-60"
     >
       <span
         aria-hidden

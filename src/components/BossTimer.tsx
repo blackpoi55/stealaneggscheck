@@ -74,6 +74,8 @@ function openingTimes(secondsLeft: number, count: number) {
 export default function BossTimer() {
   const [state, setState] = useState<EventsState | null>(null);
   const [left, setLeft] = useState(0);
+  /** guards the notify switch while it talks to the push service */
+  const [working, setWorking] = useState(false);
 
   const sound = useSyncExternalStore(subscribe, soundOn, () => false);
   const notifications = useSyncExternalStore(subscribe, notifyOn, () => false);
@@ -160,21 +162,31 @@ export default function BossTimer() {
   };
 
   const toggleNotifications = async () => {
-    if (notifications) {
-      write(NOTIFY_KEY, "0");
-      write(PUSH_KEY, "0");
-      void unsubscribeFromPush();
-      return;
+    // Both halves talk to the push service and the server, so they must not
+    // overlap: an unsubscribe still in flight would otherwise delete the
+    // subscription a quick re-enable had just registered.
+    if (working) return;
+    setWorking(true);
+    try {
+      if (notifications) {
+        write(NOTIFY_KEY, "0");
+        write(PUSH_KEY, "0");
+        await unsubscribeFromPush();
+        return;
+      }
+
+      const granted = await requestNotifications();
+      write(NOTIFY_KEY, granted ? "1" : "0");
+      if (!granted) return;
+
+      // Register for push as well, so alerts still arrive with the site
+      // closed. If that fails we keep the in-page alerts rather than turning
+      // it all off.
+      write(PUSH_KEY, (await subscribeToPush()) ? "1" : "0");
+      void notify("เปิดแจ้งเตือนแล้ว", "จะเตือนก่อนประตูบอสเปิด 1 นาที · Alerts are on", "sp-boss");
+    } finally {
+      setWorking(false);
     }
-
-    const granted = await requestNotifications();
-    write(NOTIFY_KEY, granted ? "1" : "0");
-    if (!granted) return;
-
-    // Register for push as well, so alerts still arrive with the site closed.
-    // If that fails we keep the in-page alerts rather than turning it all off.
-    write(PUSH_KEY, (await subscribeToPush()) ? "1" : "0");
-    void notify("เปิดแจ้งเตือนแล้ว", "จะเตือนก่อนประตูบอสเปิด 1 นาที · Alerts are on", "sp-boss");
   };
 
   if (!state?.enabled) return null;
@@ -216,7 +228,8 @@ export default function BossTimer() {
             <Switch
               checked={notifications}
               onChange={() => void toggleNotifications()}
-              label="แจ้งเตือน · Notify"
+              disabled={working}
+              label={working ? "กำลังตั้งค่า…" : "แจ้งเตือน · Notify"}
               title={
                 notificationPermission() === "denied"
                   ? "เบราว์เซอร์บล็อกการแจ้งเตือนไว้ ต้องไปเปิดในตั้งค่าเว็บไซต์"
