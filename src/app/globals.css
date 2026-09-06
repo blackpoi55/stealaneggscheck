@@ -1,0 +1,276 @@
+@import "tailwindcss";
+
+/* Dark mode follows the OS by default; a `.light` / `.dark` class on <html>
+   (written by the toggle, replayed before paint in layout.tsx) overrides it. */
+@custom-variant dark {
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(html:not(.light), html:not(.light) *) {
+      @slot;
+    }
+  }
+}
+
+@theme {
+  /* Surfaces stay quiet so the egg artwork carries the colour. */
+  --color-surface: #ffffff;
+  --color-surface-2: #f6f4f7;
+  --color-surface-3: #ece8ee;
+
+  --color-ink: #17131a;
+  --color-ink-2: #6b6673;
+  --color-ink-3: #9a94a2;
+
+  --color-candy-400: #ff7fb6;
+  --color-candy-500: #f4318c;
+  --color-candy-600: #d31c73;
+  --color-grape-500: #8b5cf6;
+  --color-mint-500: #10b981;
+  --color-mint-600: #0a7f5a;
+  --color-sky-ice: #38bdf8;
+
+  --font-sans: var(--font-inter), var(--font-thai), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-rise: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-shimmer: shimmer 4s linear infinite;
+}
+
+:root {
+  --hairline: rgba(23, 19, 26, 0.1);
+  --hairline-strong: rgba(23, 19, 26, 0.16);
+  --panel: rgba(252, 251, 253, 0.88);
+  --panel-solid: #ffffff;
+  --card-shadow: 0 1px 2px rgba(23, 19, 26, 0.04), 0 12px 32px -20px rgba(23, 19, 26, 0.35);
+  --card-shadow-hover: 0 2px 6px rgba(23, 19, 26, 0.06), 0 28px 56px -24px rgba(23, 19, 26, 0.4);
+  --page-bg: #f6f4f7;
+  --aurora-opacity: 0.55;
+
+  --r-common: #6b7688;
+  --r-uncommon: #12905d;
+  --r-rare: #2f6fe0;
+  --r-epic: #8b46ef;
+  --r-legendary: #c67a00;
+  --r-mythic: #d81b56;
+  --r-cosmic: #0894ae;
+  --r-secret: #b524c4;
+  --r-eternal: #de5a06;
+  --r-divine: #b8860b;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    --color-surface: #17151b;
+    --color-surface-2: #0d0c10;
+    --color-surface-3: #232028;
+
+    --color-ink: #f6f4f8;
+    --color-ink-2: #a09aa8;
+    --color-ink-3: #726c7a;
+
+    --color-candy-500: #ff5fa8;
+    --color-candy-600: #ff8bc0;
+    --color-mint-600: #0e9a70;
+
+    --hairline: rgba(255, 255, 255, 0.11);
+    --hairline-strong: rgba(255, 255, 255, 0.18);
+    --panel: rgba(14, 13, 17, 0.88);
+    --panel-solid: #17151b;
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 40px -24px rgba(0, 0, 0, 0.9);
+    --card-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.6), 0 32px 64px -28px rgba(0, 0, 0, 1);
+    --page-bg: #0d0c10;
+    --aurora-opacity: 0.4;
+
+    --r-common: #a3aebf;
+    --r-uncommon: #3ddb95;
+    --r-rare: #74aeff;
+    --r-epic: #c39bff;
+    --r-legendary: #ffc247;
+    --r-mythic: #ff6d94;
+    --r-cosmic: #45dcf2;
+    --r-secret: #ec83f6;
+    --r-eternal: #ff9a4d;
+    --r-divine: #ffdf7a;
+  }
+}
+
+html.dark {
+  --color-mint-600: #0e9a70;
+  --color-surface: #17151b;
+  --color-surface-2: #0d0c10;
+  --color-surface-3: #232028;
+
+  --color-ink: #f6f4f8;
+  --color-ink-2: #a09aa8;
+  --color-ink-3: #726c7a;
+
+  --color-candy-500: #ff5fa8;
+  --color-candy-600: #ff8bc0;
+
+  --hairline: rgba(255, 255, 255, 0.11);
+  --hairline-strong: rgba(255, 255, 255, 0.18);
+  --panel: rgba(14, 13, 17, 0.88);
+  --panel-solid: #17151b;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 40px -24px rgba(0, 0, 0, 0.9);
+  --card-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.6), 0 32px 64px -28px rgba(0, 0, 0, 1);
+  --page-bg: #0d0c10;
+  --aurora-opacity: 0.4;
+
+  --r-common: #a3aebf;
+  --r-uncommon: #3ddb95;
+  --r-rare: #74aeff;
+  --r-epic: #c39bff;
+  --r-legendary: #ffc247;
+  --r-mythic: #ff6d94;
+  --r-cosmic: #45dcf2;
+  --r-secret: #ec83f6;
+  --r-eternal: #ff9a4d;
+  --r-divine: #ffdf7a;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 200% 50%;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h, 7rem) + 0.5rem);
+  color-scheme: light dark;
+}
+
+html.light {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--page-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
+}
+
+/* One soft candy aurora at the top — the only decoration on the page. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -25vh -10vw auto;
+  height: 90vh;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--aurora-opacity);
+  background:
+    radial-gradient(34rem 26rem at 20% 12%, rgba(244, 49, 140, 0.22), transparent 68%),
+    radial-gradient(30rem 24rem at 78% 4%, rgba(139, 92, 246, 0.2), transparent 68%),
+    radial-gradient(26rem 20rem at 52% 30%, rgba(56, 189, 248, 0.16), transparent 70%);
+  filter: blur(10px);
+}
+
+::selection {
+  background: var(--color-candy-500);
+  color: #fff;
+}
+
+@layer utilities {
+  .panel {
+    background: var(--panel);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  .card {
+    background: var(--panel-solid);
+    box-shadow: var(--card-shadow);
+  }
+
+  .rule {
+    border-color: var(--hairline);
+  }
+
+  .hairline {
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+
+  /* Apple-ish display type: heavy weight, tight tracking, tight leading. */
+  .display {
+    font-weight: 700;
+    letter-spacing: -0.032em;
+    line-height: 1.05;
+  }
+
+  .headline {
+    font-weight: 650;
+    letter-spacing: -0.024em;
+    line-height: 1.1;
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  /* Holographic sweep — Divine tier and the wordmark.
+     background-image (not the shorthand) so `bg-clip-text` still applies. */
+  .prismatic {
+    background-image: linear-gradient(
+      100deg,
+      #f4318c,
+      #ff9a4d,
+      #ffd166,
+      #34d399,
+      #38bdf8,
+      #8b5cf6,
+      #f4318c
+    );
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  /* Edge fade for horizontally scrolling rails. */
+  .rail-fade {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1.5rem, #000 calc(100% - 1.5rem), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 1.5rem, #000 calc(100% - 1.5rem), transparent 100%);
+  }
+}
