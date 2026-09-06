@@ -149,6 +149,12 @@ export default function BossTimer() {
     if (next) chimeWarn(1); // single preview, and unlocks audio for the real alerts
   };
 
+  /** Proves the whole chain works without waiting for the next opening. */
+  const testAlert = () => {
+    if (soundOn()) chimeWarn(1);
+    void notify("ทดสอบแจ้งเตือน", "ถ้าเห็นข้อความนี้แปลว่าใช้ได้ · Alerts are working", "sp-boss-test");
+  };
+
   const toggleNotifications = async () => {
     if (notifications) {
       write(NOTIFY_KEY, "0");
@@ -222,6 +228,16 @@ export default function BossTimer() {
                     : "เฉพาะตอนเปิดเว็บไว้ · only while open"
               }
             />
+
+            {(sound || notifications) && (
+              <button
+                type="button"
+                onClick={testAlert}
+                className="rounded-full bg-surface-3 px-3 py-1.5 text-[11.5px] font-medium text-ink-2 transition hover:text-ink"
+              >
+                ทดสอบ · Test
+              </button>
+            )}
           </div>
 
           <p className="mt-3 text-[12px] uppercase tracking-[0.14em] text-ink-3">
