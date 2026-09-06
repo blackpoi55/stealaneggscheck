@@ -41,6 +41,13 @@ const statements = [
   `create index if not exists comments_created_idx on comments (created_at desc)`,
   `create index if not exists comments_ip_hash_idx on comments (ip_hash)`,
 
+  `create table if not exists rift_anchor (
+     id int primary key,
+     rotates_at timestamptz not null,
+     banner int not null,
+     updated_at timestamptz not null default now()
+   )`,
+
   `create table if not exists blocked_ips (
      ip_hash text primary key,
      ip text,

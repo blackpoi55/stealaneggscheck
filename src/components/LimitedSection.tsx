@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import CollectTick, { useCollected } from "./CollectTick";
+import RiftTimer from "./RiftTimer";
 import { RARITY_BY_ID, cashReward, compact, money } from "@/data/steal-an-egg";
 import {
   LIMITED_BY_SOURCE,
@@ -133,7 +134,11 @@ export default function LimitedSection() {
           </p>
         </div>
 
-        <div className="mt-10 space-y-12">
+        <div className="mt-8">
+          <RiftTimer />
+        </div>
+
+        <div className="mt-8 space-y-12">
           {LIMITED_BY_SOURCE.map(({ group, pets }) => {
             const groupHave = pets.reduce((n, p) => n + (collected.has(p.id) ? 1 : 0), 0);
             const banners = [...new Set(pets.map((p) => p.banner).filter(Boolean))] as number[];

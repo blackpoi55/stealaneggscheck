@@ -23,6 +23,7 @@ interface AdminData {
   comments: AdminComment[];
   blocks: Block[];
   views: { total: number; today: number };
+  rift: { configured: boolean; currentBanner?: number; secondsToRotation?: number };
 }
 
 export default function AdminPage() {
@@ -30,6 +31,8 @@ export default function AdminPage() {
   const [data, setData] = useState<AdminData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [minutesLeft, setMinutesLeft] = useState("");
+  const [currentBanner, setCurrentBanner] = useState("1");
 
   const load = useCallback(
     async (t: string) => {
@@ -101,6 +104,58 @@ export default function AdminPage() {
             ผู้เข้าชมทั้งหมด <b className="text-ink">{data.views.total.toLocaleString()}</b> · วันนี้{" "}
             <b className="text-ink">{data.views.today.toLocaleString()}</b>
           </p>
+
+          <section className="card mt-6 rounded-2xl p-4">
+            <h2 className="headline text-[17px] text-ink">ตัวจับเวลา Rift</h2>
+            <p className="mt-1 text-[12.5px] text-ink-3">
+              {data.rift.configured
+                ? `ตอนนี้ชุดที่ ${data.rift.currentBanner} · เปลี่ยนในอีก ${Math.floor((data.rift.secondsToRotation ?? 0) / 60)} นาที`
+                : "ยังไม่ได้ตั้ง — เปิดเกมดูว่าเหลืออีกกี่นาทีและตอนนี้เป็นชุดไหน"}
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void act({
+                  action: "rift",
+                  minutesLeft: Number(minutesLeft),
+                  currentBanner: Number(currentBanner),
+                });
+              }}
+              className="mt-3 flex flex-wrap items-end gap-2"
+            >
+              <label className="text-[12px] text-ink-3">
+                เหลืออีก (นาที)
+                <input
+                  type="number"
+                  min={0}
+                  max={180}
+                  required
+                  value={minutesLeft}
+                  onChange={(e) => setMinutesLeft(e.target.value)}
+                  className="mt-1 block w-28 rounded-xl bg-surface-2 px-3 py-2 text-[14px] text-ink outline-none focus:ring-2 focus:ring-candy-500"
+                />
+              </label>
+              <label className="text-[12px] text-ink-3">
+                ตอนนี้ชุดที่
+                <select
+                  value={currentBanner}
+                  onChange={(e) => setCurrentBanner(e.target.value)}
+                  className="mt-1 block w-24 rounded-xl bg-surface-2 px-3 py-2 text-[14px] text-ink outline-none focus:ring-2 focus:ring-candy-500"
+                >
+                  <option value="1">ชุด 1</option>
+                  <option value="2">ชุด 2</option>
+                  <option value="3">ชุด 3</option>
+                </select>
+              </label>
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-xl bg-candy-500 px-4 py-2 text-[14px] font-semibold text-white transition hover:bg-candy-600 disabled:opacity-40"
+              >
+                บันทึก
+              </button>
+            </form>
+          </section>
 
           <h2 className="headline mt-8 text-[17px] text-ink">
             ความคิดเห็น <span className="num text-ink-3">({data.comments.length})</span>
