@@ -3,7 +3,7 @@
  *
  * The context is created on the first call, which must come from a click —
  * mobile browsers refuse to start audio without a user gesture. Turning the
- * alert on plays a preview, which doubles as that gesture.
+ * alert on plays a single preview, which doubles as that gesture.
  */
 
 let audio: AudioContext | null = null;
@@ -21,26 +21,36 @@ function ensureAudio() {
   return audio;
 }
 
-function play(notes: number[], gap = 0.16) {
+const TAIL = 0.5; // how long a note rings out
+const REST = 0.32; // silence between repeats, so they read as separate alerts
+
+function play(notes: number[], gap: number, repeats: number) {
   const ctx = ensureAudio();
   if (!ctx) return;
-  notes.forEach((freq, i) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = freq;
-    const at = ctx.currentTime + i * gap;
-    gain.gain.setValueAtTime(0.0001, at);
-    gain.gain.exponentialRampToValueAtTime(0.22, at + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.5);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(at);
-    osc.stop(at + 0.55);
-  });
+
+  const pattern = (notes.length - 1) * gap + TAIL;
+  const start = ctx.currentTime;
+
+  for (let round = 0; round < repeats; round++) {
+    const roundAt = start + round * (pattern + REST);
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const at = roundAt + i * gap;
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.26, at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + TAIL);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(at);
+      osc.stop(at + TAIL + 0.05);
+    });
+  }
 }
 
-/** heads-up: a rising figure */
-export const chimeWarn = () => play([880, 1108.73, 1318.51]);
+/** heads-up: a rising figure, three times over */
+export const chimeWarn = (repeats = 3) => play([880, 1108.73, 1318.51], 0.16, repeats);
 
 /** it is happening now: a shorter, falling one */
-export const chimeNow = () => play([1318.51, 1046.5], 0.14);
+export const chimeNow = (repeats = 3) => play([1318.51, 1046.5], 0.14, repeats);

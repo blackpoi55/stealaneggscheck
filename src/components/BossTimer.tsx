@@ -135,7 +135,7 @@ export default function BossTimer() {
   const toggleSound = () => {
     const next = !sound;
     write(SOUND_KEY, next ? "1" : "0");
-    if (next) chimeWarn(); // preview, and unlocks audio for the later plays
+    if (next) chimeWarn(1); // single preview, and unlocks audio for the real alerts
   };
 
   const toggleNotifications = async () => {
