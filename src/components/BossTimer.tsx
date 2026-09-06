@@ -9,6 +9,13 @@ export const BOSS_ANCHOR = "boss";
 
 const SOUND_KEY = "sp-boss-sound";
 const NOTIFY_KEY = "sp-boss-notify";
+/** Three reminders on the way down, not one. */
+const ALERTS = [
+  { at: 300, th: "อีก 5 นาที ประตูบอสจะเปิด", en: "Boss rift opens in 5 minutes", label: "5 นาที" },
+  { at: 60, th: "อีก 1 นาที ประตูบอสจะเปิด", en: "Boss rift opens in 1 minute", label: "1 นาที" },
+  { at: 0, th: "ประตูบอสเปิดแล้ว!", en: "The rift is open — go fight the Abyss Overlord", label: "ตอนเปิด" },
+] as const;
+
 const WARN_SECONDS = 60;
 const RESYNC_MS = 10 * 60 * 1000;
 const HALF_HOUR_MS = 30 * 60 * 1000;
@@ -74,18 +81,19 @@ export default function BossTimer() {
   // "seconds remaining", so a wrong clock on the visitor's device changes
   // nothing.
   const seed = useRef<{ seconds: number; at: number } | null>(null);
-  const warned = useRef(false);
-  const fired = useRef(false);
+  /** thresholds already dealt with, so re-syncing never re-alerts */
+  const done = useRef(new Set<number>());
 
   const sync = useCallback(async () => {
     try {
       const data: EventsState = await (await fetch("/api/events", { cache: "no-store" })).json();
       setState(data);
       if (typeof data.boss.secondsToNext === "number") {
-        seed.current = { seconds: data.boss.secondsToNext, at: performance.now() };
-        setLeft(data.boss.secondsToNext);
-        warned.current = data.boss.secondsToNext <= WARN_SECONDS;
-        fired.current = false;
+        const seconds = data.boss.secondsToNext;
+        seed.current = { seconds, at: performance.now() };
+        setLeft(seconds);
+        // anything already passed when the page loaded is not worth announcing
+        done.current = new Set(ALERTS.filter((a) => seconds <= a.at).map((a) => a.at));
       }
     } catch {
       // keep whatever we last knew
@@ -108,25 +116,15 @@ export default function BossTimer() {
       const remaining = Math.max(0, Math.round(s.seconds - (performance.now() - s.at) / 1000));
       setLeft(remaining);
 
-      if (remaining <= WARN_SECONDS && remaining > 0 && !warned.current) {
-        warned.current = true;
-        if (soundOn()) chimeWarn();
-        if (notifyOn()) {
-          void notify(
-            "ประตูบอสใกล้เปิดแล้ว",
-            `อีก ${remaining} วินาที · Boss rift opens in under a minute`,
-            "sp-boss"
-          );
-        }
-      }
+      for (const alert of ALERTS) {
+        if (remaining > alert.at || done.current.has(alert.at)) continue;
+        done.current.add(alert.at);
 
-      if (remaining === 0 && !fired.current) {
-        fired.current = true;
-        if (soundOn()) chimeNow();
-        if (notifyOn()) {
-          void notify("ประตูบอสเปิดแล้ว!", "เข้าไปตี Abyss Overlord ได้เลย · The rift is open", "sp-boss");
-        }
-        setTimeout(() => void sync(), 2000);
+        const opening = alert.at === 0;
+        if (soundOn()) (opening ? chimeNow : chimeWarn)();
+        if (notifyOn()) void notify(alert.th, alert.en, "sp-boss");
+        // the countdown restarts server-side the moment it opens
+        if (opening) setTimeout(() => void sync(), 2000);
       }
     }, 250);
     return () => clearInterval(tick);
@@ -228,6 +226,22 @@ export default function BossTimer() {
           </p>
 
           <p className="num mt-1 text-[11.5px] text-ink-3">รอบถัดไป · then {following.join(" · ")}</p>
+
+          {(sound || notifications) && (
+            <p className="mt-2 inline-flex flex-wrap items-center gap-1.5 text-[11.5px] text-ink-3">
+              เตือน 3 จังหวะ ·
+              {ALERTS.map((a) => (
+                <span
+                  key={a.at}
+                  className={`rounded-full px-2 py-[2px] font-medium ${
+                    left > a.at ? "bg-surface-2 text-ink-2" : "bg-mint-600/15 text-mint-600 line-through"
+                  }`}
+                >
+                  {a.label}
+                </span>
+              ))}
+            </p>
+          )}
         </div>
 
         {/* what you are queueing for */}
