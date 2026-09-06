@@ -9,9 +9,9 @@ export const BOSS_ANCHOR = "boss";
 
 const SOUND_KEY = "sp-boss-sound";
 const NOTIFY_KEY = "sp-boss-notify";
-const OWN_KEY = "sp-boss-own";
 const WARN_SECONDS = 60;
 const RESYNC_MS = 10 * 60 * 1000;
+const HALF_HOUR_MS = 30 * 60 * 1000;
 
 /* ── preferences kept outside React ─────────────────────────────────────── */
 
@@ -22,7 +22,6 @@ const subscribe = (l: () => void) => {
     listeners.delete(l);
   };
 };
-const emit = () => listeners.forEach((l) => l());
 
 const read = (key: string) => {
   try {
@@ -32,14 +31,13 @@ const read = (key: string) => {
   }
 };
 
-const write = (key: string, value: string | null) => {
+const write = (key: string, value: string) => {
   try {
-    if (value === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, value);
+    localStorage.setItem(key, value);
   } catch {
     // private mode — the choice just won't persist
   }
-  emit();
+  listeners.forEach((l) => l());
 };
 
 const soundOn = () => read(SOUND_KEY) === "1";
@@ -47,32 +45,30 @@ const soundOn = () => read(SOUND_KEY) === "1";
 /** Only counts as on once the browser has actually granted permission. */
 const notifyOn = () => read(NOTIFY_KEY) === "1" && notificationPermission() === "granted";
 
-/**
- * A countdown the visitor started from their own server's on-screen timer.
- * Stored as the wall-clock moment the portal next opens, so it survives a
- * reload; the seconds are re-derived from it, never trusted across sessions.
- */
-const ownNextAt = () => {
-  const raw = read(OWN_KEY);
-  const at = raw ? Number(raw) : NaN;
-  return Number.isFinite(at) ? at : null;
-};
-
 /* ── helpers ────────────────────────────────────────────────────────────── */
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const format = (t: number) => `${pad(Math.floor(t / 60))}:${pad(t % 60)}`;
 
+/**
+ * The portal opens on the hour and the half hour, so the clock labels are
+ * snapped to the nearest boundary — that keeps them right even when the
+ * device clock is a little off, while the countdown itself is the server's.
+ */
+function openingTimes(secondsLeft: number, count: number) {
+  const next = Math.round((Date.now() + secondsLeft * 1000) / HALF_HOUR_MS) * HALF_HOUR_MS;
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(next + i * HALF_HOUR_MS);
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
+}
+
 export default function BossTimer() {
   const [state, setState] = useState<EventsState | null>(null);
   const [left, setLeft] = useState(0);
-  const [editing, setEditing] = useState(false);
-  const [mm, setMm] = useState("");
-  const [ss, setSs] = useState("");
 
   const sound = useSyncExternalStore(subscribe, soundOn, () => false);
   const notifications = useSyncExternalStore(subscribe, notifyOn, () => false);
-  const own = useSyncExternalStore(subscribe, ownNextAt, () => null);
 
   // The countdown runs off a monotonic clock seeded by the server's own
   // "seconds remaining", so a wrong clock on the visitor's device changes
@@ -81,27 +77,20 @@ export default function BossTimer() {
   const warned = useRef(false);
   const fired = useRef(false);
 
-  const period = state?.boss.periodSeconds ?? 1800;
-
-  const arm = useCallback((seconds: number) => {
-    seed.current = { seconds, at: performance.now() };
-    setLeft(seconds);
-    warned.current = seconds <= WARN_SECONDS;
-    fired.current = false;
-  }, []);
-
   const sync = useCallback(async () => {
     try {
       const data: EventsState = await (await fetch("/api/events", { cache: "no-store" })).json();
       setState(data);
-      // a personal timer always wins: Roblox events can run per server
-      if (ownNextAt() === null && data.boss.configured && typeof data.boss.secondsToNext === "number") {
-        arm(data.boss.secondsToNext);
+      if (typeof data.boss.secondsToNext === "number") {
+        seed.current = { seconds: data.boss.secondsToNext, at: performance.now() };
+        setLeft(data.boss.secondsToNext);
+        warned.current = data.boss.secondsToNext <= WARN_SECONDS;
+        fired.current = false;
       }
     } catch {
       // keep whatever we last knew
     }
-  }, [arm]);
+  }, []);
 
   useEffect(() => {
     // Fetching the schedule is the "subscribe to an external system" case the
@@ -111,13 +100,6 @@ export default function BossTimer() {
     const resync = setInterval(() => void sync(), RESYNC_MS);
     return () => clearInterval(resync);
   }, [sync]);
-
-  // Re-seed whenever the visitor sets or clears their own timer.
-  useEffect(() => {
-    if (own === null) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    arm(Math.max(0, Math.round((own - Date.now()) / 1000)));
-  }, [own, arm]);
 
   useEffect(() => {
     const tick = setInterval(() => {
@@ -144,16 +126,11 @@ export default function BossTimer() {
         if (notifyOn()) {
           void notify("ประตูบอสเปิดแล้ว!", "เข้าไปตี Abyss Overlord ได้เลย · The rift is open", "sp-boss");
         }
-        if (ownNextAt() !== null) {
-          // roll the personal timer forward one full cycle
-          write(OWN_KEY, String(Date.now() + period * 1000));
-        } else {
-          setTimeout(() => void sync(), 2000);
-        }
+        setTimeout(() => void sync(), 2000);
       }
     }, 250);
     return () => clearInterval(tick);
-  }, [sync, period]);
+  }, [sync]);
 
   const toggleSound = () => {
     const next = !sound;
@@ -173,19 +150,10 @@ export default function BossTimer() {
     }
   };
 
-  const saveOwn = (e: React.FormEvent) => {
-    e.preventDefault();
-    const seconds = Number(mm || 0) * 60 + Number(ss || 0);
-    if (!Number.isFinite(seconds) || seconds < 0 || seconds > period) return;
-    write(OWN_KEY, String(Date.now() + seconds * 1000));
-    setEditing(false);
-  };
-
   if (!state?.enabled) return null;
 
-  const usingOwn = own !== null;
-  const ready = usingOwn || state.boss.configured;
   const last = left > 0 && left <= WARN_SECONDS;
+  const [nextAt, ...following] = openingTimes(left, 4);
 
   return (
     <section id={BOSS_ANCHOR} className="card relative overflow-hidden rounded-[22px] scroll-mt-[11rem]">
@@ -206,11 +174,7 @@ export default function BossTimer() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-grape-500 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-grape-500" />
               </span>
-              {usingOwn
-                ? "จับเวลาเอง · Your timer"
-                : state.boss.source === "clock"
-                  ? "ตามนาฬิกา :00 / :30 · Clock estimate"
-                  : "เวลาเซิร์ฟเวอร์ · Server time"}
+              ทุกนาทีที่ :00 และ :30 · On the clock
             </span>
 
             <button
@@ -221,7 +185,7 @@ export default function BossTimer() {
                 sound ? "bg-mint-600 text-white" : "bg-surface-3 text-ink-2 hover:text-ink"
               }`}
             >
-              {sound ? "🔔 เตือนก่อน 1 นาที · Alert on" : "🔕 ไม่เตือน · Alert off"}
+              {sound ? "🔔 เสียงเตือนเปิด · Sound on" : "🔕 เสียงเตือน · Sound"}
             </button>
 
             <button
@@ -239,109 +203,31 @@ export default function BossTimer() {
             >
               {notifications ? "🔔 แจ้งเตือนเปิด · Notify on" : "💬 แจ้งเตือน · Notify"}
             </button>
-
-            <button
-              type="button"
-              onClick={() => setEditing((v) => !v)}
-              className="rounded-full bg-surface-3 px-2.5 py-1 text-[11px] font-semibold text-ink-2 transition hover:text-ink"
-            >
-              ตั้งเวลาจากในเกม · Set from game
-            </button>
-
-            {usingOwn && (
-              <button
-                type="button"
-                onClick={() => write(OWN_KEY, null)}
-                className="rounded-full px-2 py-1 text-[11px] font-medium text-ink-3 transition hover:text-candy-500"
-              >
-                ใช้เวลาเซิร์ฟเวอร์ · Use server
-              </button>
-            )}
           </div>
 
-          {editing && (
-            <form onSubmit={saveOwn} className="mt-3 flex flex-wrap items-end gap-2">
-              <label className="text-[11.5px] text-ink-3">
-                นาที
-                <input
-                  type="number"
-                  min={0}
-                  max={30}
-                  value={mm}
-                  onChange={(e) => setMm(e.target.value)}
-                  placeholder="12"
-                  className="mt-1 block w-20 rounded-xl bg-surface-2 px-3 py-2 text-[14px] text-ink outline-none focus:ring-2 focus:ring-candy-500"
-                />
-              </label>
-              <label className="text-[11.5px] text-ink-3">
-                วินาที
-                <input
-                  type="number"
-                  min={0}
-                  max={59}
-                  value={ss}
-                  onChange={(e) => setSs(e.target.value)}
-                  placeholder="30"
-                  className="mt-1 block w-20 rounded-xl bg-surface-2 px-3 py-2 text-[14px] text-ink outline-none focus:ring-2 focus:ring-candy-500"
-                />
-              </label>
-              <button
-                type="submit"
-                className="rounded-xl bg-candy-500 px-4 py-2 text-[13.5px] font-semibold text-white transition hover:bg-candy-600"
-              >
-                เริ่มจับเวลา
-              </button>
-              <p className="w-full text-[11.5px] leading-relaxed text-ink-3">
-                กรอกตามตัวเลขที่ขึ้นในเกมของคุณ — แม่นกว่าเสมอ เพราะแต่ละเซิร์ฟอาจนับไม่ตรงกัน ·
-                Copy your own server&apos;s countdown; it is always the authority.
-              </p>
-            </form>
-          )}
+          <p className="mt-3 text-[12px] uppercase tracking-[0.14em] text-ink-3">
+            ประตูบอสเปิดในอีก · Boss rift opens in
+          </p>
+          <p
+            className={`num display mt-0.5 text-[3.4rem] leading-none transition-colors sm:text-[4.4rem] ${
+              last ? "animate-pulse text-candy-500" : "text-ink"
+            }`}
+          >
+            {format(left)}
+          </p>
 
-          {ready ? (
-            <>
-              <p className="mt-3 text-[12px] uppercase tracking-[0.14em] text-ink-3">
-                ประตูบอสเปิดในอีก · Boss rift opens in
-              </p>
-              <p
-                className={`num display mt-0.5 text-[3.4rem] leading-none transition-colors sm:text-[4.4rem] ${
-                  last ? "animate-pulse text-candy-500" : "text-ink"
-                }`}
-              >
-                {format(left)}
-              </p>
-              <p className="mt-1.5 text-[13px] text-ink-2">
-                {last ? (
-                  <span className="font-semibold text-candy-500">ใกล้เปิดแล้ว เตรียมตัว · Opening now</span>
-                ) : (
-                  <>
-                    เปิดทุก 30 นาที · every 30 minutes{" "}
-                    <span className="text-ink-3">— บอส Abyss Overlord</span>
-                  </>
-                )}
-              </p>
+          <p className="mt-1.5 text-[13px] text-ink-2">
+            {last ? (
+              <span className="font-semibold text-candy-500">ใกล้เปิดแล้ว เตรียมตัว · Opening now</span>
+            ) : (
+              <>
+                เปิด <b className="num text-ink">{nextAt} น.</b>{" "}
+                <span className="text-ink-3">— บอส Abyss Overlord</span>
+              </>
+            )}
+          </p>
 
-              {!usingOwn && state.boss.source === "clock" && (
-                <p className="mt-2 max-w-md text-[11.5px] leading-relaxed text-ink-3">
-                  ตัวเลขนี้เดาจากนาฬิกา (นาทีที่ :00 กับ :30) ยังไม่ได้ยืนยันกับในเกม —
-                  กด <b className="text-ink-2">ตั้งเวลาจากในเกม</b> แล้วกรอกตามจอตัวเอง จะแม่นกว่า
-                  <span className="mt-0.5 block">
-                    Estimated from the clock and not yet verified in game; your own countdown is the authority.
-                  </span>
-                </p>
-              )}
-            </>
-          ) : (
-            <>
-              <p className="headline mt-3 text-[19px] text-ink">ยังไม่ได้ตั้งเวลาประตูบอส</p>
-              <p className="mt-1 max-w-md text-[13px] leading-relaxed text-ink-2">
-                กด <b>ตั้งเวลาจากในเกม</b> แล้วกรอกตัวเลขที่นับถอยหลังอยู่บนจอ ระบบจะจับเวลาต่อให้เอง
-                <span className="mt-1 block text-ink-3">
-                  Set it from your own server&apos;s on-screen countdown and the page keeps time from there.
-                </span>
-              </p>
-            </>
-          )}
+          <p className="num mt-1 text-[11.5px] text-ink-3">รอบถัดไป · then {following.join(" · ")}</p>
         </div>
 
         {/* what you are queueing for */}

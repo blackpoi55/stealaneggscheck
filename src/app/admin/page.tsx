@@ -24,7 +24,7 @@ interface AdminData {
   blocks: Block[];
   views: { total: number; today: number };
   events: {
-    boss: { configured: boolean; secondsToNext?: number };
+    boss: { configured: boolean; source?: "anchor" | "clock"; secondsToNext?: number };
     riftEggs: { configured: boolean; currentBanner?: number; secondsToNext?: number };
   };
 }
@@ -111,11 +111,12 @@ export default function AdminPage() {
           </p>
 
           <section className="card mt-6 rounded-2xl p-4">
-            <h2 className="headline text-[17px] text-ink">ประตูบอส (ทุก 30 นาที)</h2>
+            <h2 className="headline text-[17px] text-ink">ประตูบอส — ตั้งทับ (ปกติไม่ต้อง)</h2>
             <p className="mt-1 text-[12.5px] text-ink-3">
-              {data.events.boss.configured
-                ? `เปิดอีกครั้งในอีก ${Math.floor((data.events.boss.secondsToNext ?? 0) / 60)}:${String((data.events.boss.secondsToNext ?? 0) % 60).padStart(2, "0")} นาที`
-                : "ยังไม่ได้ตั้ง — ดูตัวเลขนับถอยหลังในเกมแล้วกรอก"}
+              ปกติเว็บใช้นาฬิกา :00 / :30 อยู่แล้ว ฟอร์มนี้ไว้ใช้ตอนเกมเปลี่ยนรอบเท่านั้น ·{" "}
+              {data.events.boss.source === "clock"
+                ? "ตอนนี้ใช้นาฬิกา"
+                : `ตอนนี้ตั้งทับไว้ เปิดอีกครั้งในอีก ${Math.floor((data.events.boss.secondsToNext ?? 0) / 60)} นาที`}
             </p>
             <form
               onSubmit={(e) => {
