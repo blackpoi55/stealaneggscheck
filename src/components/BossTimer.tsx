@@ -152,7 +152,11 @@ export default function BossTimer() {
   /** Proves the whole chain works without waiting for the next opening. */
   const testAlert = () => {
     if (soundOn()) chimeWarn(1);
-    void notify("ทดสอบแจ้งเตือน", "ถ้าเห็นข้อความนี้แปลว่าใช้ได้ · Alerts are working", "sp-boss-test");
+    void notify(
+      "ทดสอบแจ้งเตือน",
+      `ถ้าเห็นข้อความนี้แปลว่าใช้ได้ · ${new Date().toLocaleTimeString("th-TH")}`,
+      `sp-test-${Date.now()}`
+    );
   };
 
   const toggleNotifications = async () => {

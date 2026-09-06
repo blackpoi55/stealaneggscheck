@@ -31,13 +31,17 @@ export async function requestNotifications(): Promise<boolean> {
 export async function notify(title: string, body: string, tag = "sp-event") {
   if (!notificationsSupported() || Notification.permission !== "granted") return;
 
-  const options: NotificationOptions = {
+  const options = {
     body,
-    tag, // a repeat replaces the previous one instead of stacking
+    // The tag stops alerts stacking up, but replacing a notification that is
+    // still sitting in the tray is silent by default — renotify makes the
+    // replacement alert again, which is the whole point of a countdown.
+    tag,
+    renotify: true,
     icon: "/icons/icon-192.png",
     badge: "/icons/icon-32.png",
     lang: "th",
-  };
+  } satisfies NotificationOptions & { renotify: boolean };
 
   try {
     if ("serviceWorker" in navigator) {

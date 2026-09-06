@@ -1,6 +1,6 @@
 /* SweetParadise egg guide — offline support.
    Bump CACHE when the caching rules change; old caches are dropped on activate. */
-const CACHE = "sp-eggs-v3";
+const CACHE = "sp-eggs-v4";
 const OFFLINE_URL = "/";
 
 self.addEventListener("install", (event) => {
@@ -46,7 +46,10 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
+      // without renotify, replacing the tray's existing "sp-boss" entry
+      // updates it silently instead of alerting again
       tag: "sp-boss",
+      renotify: true,
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-32.png",
       lang: "th",
