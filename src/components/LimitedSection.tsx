@@ -27,7 +27,7 @@ function PetCard({ pet }: { pet: LimitedPet }) {
       }`}
     >
       <div
-        className="relative flex h-[8.5rem] items-center justify-center overflow-hidden"
+        className="relative flex h-[11rem] items-center justify-center overflow-hidden"
         style={{
           background:
             "radial-gradient(120% 100% at 50% 0%, color-mix(in oklab, var(--c) 15%, var(--panel-solid)) 0%, var(--panel-solid) 78%)",
@@ -35,7 +35,7 @@ function PetCard({ pet }: { pet: LimitedPet }) {
       >
         <span
           aria-hidden
-          className="absolute left-1/2 top-1/2 h-[5.4rem] w-[5.4rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-70 blur-xl transition-transform duration-500 group-hover:scale-125"
+          className="absolute left-1/2 top-1/2 h-[7rem] w-[7rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-70 blur-xl transition-transform duration-500 group-hover:scale-125"
           style={{ background: "color-mix(in oklab, var(--c) 40%, transparent)" }}
         />
         <Image
@@ -45,7 +45,7 @@ function PetCard({ pet }: { pet: LimitedPet }) {
           height={220}
           sizes="220px"
           className={`relative w-auto object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:scale-[1.06] ${
-            pet.tile ? "h-[8.1rem]" : "h-[6.6rem]"
+            pet.tile ? "h-[10.4rem]" : "h-[8.6rem]"
           }`}
         />
 
@@ -191,7 +191,7 @@ export default function LimitedSection() {
                       </div>
                     ))
                   : (
-                      <div className="mt-5 grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
+                      <div className="mt-5 grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
                         {pets.map((pet) => (
                           <PetCard key={pet.id} pet={pet} />
                         ))}

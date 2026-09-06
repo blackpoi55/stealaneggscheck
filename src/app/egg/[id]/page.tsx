@@ -169,15 +169,15 @@ export default async function EggPage({ params }: { params: Promise<{ id: string
 
             <div className="mt-4 flex items-center gap-3 rounded-2xl bg-surface-2 p-3">
               <span
-                className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl"
+                className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl"
                 style={{ background: "color-mix(in oklab, var(--c) 13%, var(--panel-solid))" }}
               >
                 <Image
                   src={petImg(egg.id)}
                   alt={`เพ็ต${egg.th} / ${egg.en} pet`}
-                  width={128}
-                  height={128}
-                  className="h-11 w-11 object-contain"
+                  width={192}
+                  height={192}
+                  className="h-16 w-16 object-contain"
                 />
               </span>
               <span>
@@ -292,10 +292,10 @@ export default async function EggPage({ params }: { params: Promise<{ id: string
                   <Image
                     src={eggImg(s.id)}
                     alt=""
-                    width={120}
-                    height={120}
-                    sizes="120px"
-                    className="h-14 w-14 object-contain"
+                    width={160}
+                    height={160}
+                    sizes="160px"
+                    className="h-[4.6rem] w-[4.6rem] object-contain"
                   />
                   <span className="w-full truncate text-center text-[12px] font-medium text-ink">
                     {s.th}

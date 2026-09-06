@@ -80,19 +80,19 @@ export default function EggCard({
       <div className="flex flex-1 flex-col gap-3 border-t rule p-3.5">
         <div className="flex items-start gap-2.5">
           <span
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px]"
+            className="grid h-[4.5rem] w-[4.5rem] shrink-0 place-items-center rounded-2xl"
             style={{ background: "color-mix(in oklab, var(--c) 12%, var(--panel-solid))" }}
           >
             <Image
               src={petImg(egg.id)}
               alt={`เพ็ต${egg.th} / ${egg.en} pet`}
-              width={72}
-              height={72}
-              sizes="72px"
-              className="h-7 w-7 object-contain"
+              width={128}
+              height={128}
+              sizes="128px"
+              className="h-14 w-14 object-contain"
             />
           </span>
-          <span className="min-w-0 flex-1">
+          <span className="min-w-0 flex-1 self-center">
             {/* a real link so the egg page is crawlable and middle-clickable,
                 intercepted into the quick-view dialog for plain clicks */}
             <Link

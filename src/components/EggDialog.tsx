@@ -109,7 +109,7 @@ export default function EggDialog({ egg, onClose }: { egg: Egg | null; onClose: 
             <path d="M5 12h13m0 0l-5-5m5 5l-5 5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <div
-            className="grid h-24 w-24 shrink-0 place-items-center rounded-3xl"
+            className="grid h-28 w-28 shrink-0 place-items-center rounded-3xl"
             style={{ background: "color-mix(in oklab, var(--c) 13%, var(--panel-solid))" }}
           >
             <Image
@@ -117,7 +117,7 @@ export default function EggDialog({ egg, onClose }: { egg: Egg | null; onClose: 
               alt={`เพ็ต${egg.th} / ${egg.en} pet`}
               width={192}
               height={192}
-              className="h-[4.6rem] w-[4.6rem] object-contain"
+              className="h-[5.6rem] w-[5.6rem] object-contain"
             />
           </div>
         </div>
