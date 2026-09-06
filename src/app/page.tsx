@@ -1,8 +1,8 @@
 import Image from "next/image";
+import BossTimer from "@/components/BossTimer";
+import Browse from "@/components/Browse";
 import Comments from "@/components/Comments";
-import Explorer from "@/components/Explorer";
 import InstallGuide from "@/components/InstallGuide";
-import LimitedSection from "@/components/LimitedSection";
 import Logo from "@/components/Logo";
 import SiteNav from "@/components/SiteNav";
 import VisitorCounter from "@/components/VisitorCounter";
@@ -123,12 +123,12 @@ export default function Home() {
       </section>
 
       {/* ── browse ────────────────────────────────────────────────────── */}
-      <main className="mx-auto max-w-[1320px] px-4 pb-24 pt-14 sm:px-6">
-        <Explorer />
+      <main className="mx-auto max-w-[1320px] px-4 pb-24 pt-10 sm:px-6">
+        <div className="mb-8">
+          <BossTimer />
+        </div>
+        <Browse />
       </main>
-
-      {/* ── limited eggs ──────────────────────────────────────────────── */}
-      <LimitedSection />
 
       {/* ── install as an app ─────────────────────────────────────────── */}
       <div className="border-t rule">

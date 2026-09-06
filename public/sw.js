@@ -1,6 +1,6 @@
 /* SweetParadise egg guide — offline support.
    Bump CACHE when the caching rules change; old caches are dropped on activate. */
-const CACHE = "sp-eggs-v1";
+const CACHE = "sp-eggs-v2";
 const OFFLINE_URL = "/";
 
 self.addEventListener("install", (event) => {
@@ -28,6 +28,20 @@ const isImmutable = (url) =>
   url.pathname.startsWith("/icons/") ||
   url.pathname.startsWith("/_next/static/") ||
   url.pathname.startsWith("/_next/image");
+
+// Tapping a timer notification should bring the site forward rather than
+// opening a second copy of it.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) return client.focus();
+      }
+      return self.clients.openWindow("/#boss");
+    })
+  );
+});
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;

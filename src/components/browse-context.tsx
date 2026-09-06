@@ -5,6 +5,7 @@ import { RARITIES, type BiomeId, type RarityId } from "@/data/steal-an-egg";
 
 export type SortId = "biome" | "rarity" | "income-desc" | "income-asc" | "name";
 export type OwnedFilter = "all" | "collected" | "missing";
+export type TabId = "biome" | "limited";
 
 export const BROWSE_ANCHOR = "browse";
 export const biomeAnchor = (id: BiomeId) => `biome-${id}`;
@@ -12,6 +13,7 @@ export const biomeAnchor = (id: BiomeId) => `biome-${id}`;
 const SORT_IDS: SortId[] = ["biome", "rarity", "income-desc", "income-asc", "name"];
 const RARITY_IDS = new Set(RARITIES.map((r) => r.id));
 const OWNED_IDS: OwnedFilter[] = ["all", "collected", "missing"];
+const TAB_IDS: TabId[] = ["biome", "limited"];
 
 /* ── the query string is the source of truth, so any view is shareable ──── */
 
@@ -39,6 +41,8 @@ function writeParams(mutate: (params: URLSearchParams) => void) {
 }
 
 interface BrowseState {
+  tab: TabId;
+  setTab: (v: TabId) => void;
   query: string;
   setQuery: (v: string) => void;
   rarities: RarityId[];
@@ -76,6 +80,13 @@ export function BrowseProvider({ children }: { children: React.ReactNode }) {
   const ownedParam = params.get("owned") as OwnedFilter | null;
   const owned = ownedParam && OWNED_IDS.includes(ownedParam) ? ownedParam : "all";
 
+  const tabParam = params.get("tab") as TabId | null;
+  const tab = tabParam && TAB_IDS.includes(tabParam) ? tabParam : "biome";
+
+  const setTab = useCallback((v: TabId) => {
+    writeParams((p) => (v === "biome" ? p.delete("tab") : p.set("tab", v)));
+  }, []);
+
   const setQuery = useCallback((v: string) => {
     writeParams((p) => (v ? p.set("q", v) : p.delete("q")));
   }, []);
@@ -103,20 +114,29 @@ export function BrowseProvider({ children }: { children: React.ReactNode }) {
 
   const jumpTo = useCallback(
     (id: BiomeId | "all" | "limited") => {
-      // Fast path: the section is already on the page, so scroll right away.
-      if (scrollToSection(id)) return;
+      // The two tabs never render at once, so switch first when the target
+      // lives on the other one.
+      const wanted: TabId = id === "limited" ? "limited" : "biome";
+      if (tab !== wanted) setTab(wanted);
 
-      // Otherwise the sort or filters are hiding it — clear them, then scroll
-      // once React has committed the grouped view.
-      reset();
-      afterPaint(() => scrollToSection(id));
-      setTimeout(() => scrollToSection(id), 150);
+      // Fast path: the section is already on the page.
+      if (tab === wanted && scrollToSection(id)) return;
+
+      afterPaint(() => {
+        if (scrollToSection(id)) return;
+        // still missing — the sort or filters are hiding it
+        reset();
+        afterPaint(() => scrollToSection(id));
+      });
+      setTimeout(() => scrollToSection(id), 250);
     },
-    [reset]
+    [tab, setTab, reset]
   );
 
   const value = useMemo<BrowseState>(
     () => ({
+      tab,
+      setTab,
       query,
       setQuery,
       rarities,
@@ -129,7 +149,7 @@ export function BrowseProvider({ children }: { children: React.ReactNode }) {
       reset,
       jumpTo,
     }),
-    [query, setQuery, rarities, toggleRarity, sort, setSort, owned, setOwned, reset, jumpTo]
+    [tab, setTab, query, setQuery, rarities, toggleRarity, sort, setSort, owned, setOwned, reset, jumpTo]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

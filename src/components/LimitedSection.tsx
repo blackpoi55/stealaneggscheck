@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import CollectTick, { useCollected } from "./CollectTick";
-import BossTimer from "./BossTimer";
 import RiftEggRotation from "./RiftEggRotation";
 import { RARITY_BY_ID, cashReward, compact, money } from "@/data/steal-an-egg";
 import {
@@ -112,8 +111,8 @@ export default function LimitedSection() {
   const have = LIMITED_PETS.reduce((n, p) => n + (collected.has(p.id) ? 1 : 0), 0);
 
   return (
-    <section id={LIMITED_ANCHOR} className="border-t rule bg-surface-2">
-      <div className="mx-auto max-w-[1320px] px-4 py-20 sm:px-6">
+    <section id={LIMITED_ANCHOR}>
+      <div>
         <div className="text-center">
           <p className="text-[12px] uppercase tracking-[0.14em] text-ink-3">
             ไม่ได้มาจากไบโอม · Limited eggs
@@ -133,10 +132,6 @@ export default function LimitedSection() {
           <p className="num mt-4 inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-[13.5px] font-semibold text-ink hairline">
             เก็บแล้ว {have}/{LIMITED_PETS.length}
           </p>
-        </div>
-
-        <div className="mt-8">
-          <BossTimer />
         </div>
 
         <div className="mt-8 space-y-12">

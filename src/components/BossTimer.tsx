@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { chimeNow, chimeWarn } from "@/lib/chime";
+import { notificationPermission, notify, requestNotifications } from "@/lib/notify";
 import type { EventsState } from "@/app/api/events/route";
 
 export const BOSS_ANCHOR = "boss";
 
 const SOUND_KEY = "sp-boss-sound";
+const NOTIFY_KEY = "sp-boss-notify";
 const OWN_KEY = "sp-boss-own";
 const WARN_SECONDS = 60;
 const RESYNC_MS = 10 * 60 * 1000;
@@ -20,7 +22,7 @@ const subscribe = (l: () => void) => {
     listeners.delete(l);
   };
 };
-const notify = () => listeners.forEach((l) => l());
+const emit = () => listeners.forEach((l) => l());
 
 const read = (key: string) => {
   try {
@@ -37,10 +39,13 @@ const write = (key: string, value: string | null) => {
   } catch {
     // private mode — the choice just won't persist
   }
-  notify();
+  emit();
 };
 
 const soundOn = () => read(SOUND_KEY) === "1";
+
+/** Only counts as on once the browser has actually granted permission. */
+const notifyOn = () => read(NOTIFY_KEY) === "1" && notificationPermission() === "granted";
 
 /**
  * A countdown the visitor started from their own server's on-screen timer.
@@ -66,6 +71,7 @@ export default function BossTimer() {
   const [ss, setSs] = useState("");
 
   const sound = useSyncExternalStore(subscribe, soundOn, () => false);
+  const notifications = useSyncExternalStore(subscribe, notifyOn, () => false);
   const own = useSyncExternalStore(subscribe, ownNextAt, () => null);
 
   // The countdown runs off a monotonic clock seeded by the server's own
@@ -123,11 +129,21 @@ export default function BossTimer() {
       if (remaining <= WARN_SECONDS && remaining > 0 && !warned.current) {
         warned.current = true;
         if (soundOn()) chimeWarn();
+        if (notifyOn()) {
+          void notify(
+            "ประตูบอสใกล้เปิดแล้ว",
+            `อีก ${remaining} วินาที · Boss rift opens in under a minute`,
+            "sp-boss"
+          );
+        }
       }
 
       if (remaining === 0 && !fired.current) {
         fired.current = true;
         if (soundOn()) chimeNow();
+        if (notifyOn()) {
+          void notify("ประตูบอสเปิดแล้ว!", "เข้าไปตี Abyss Overlord ได้เลย · The rift is open", "sp-boss");
+        }
         if (ownNextAt() !== null) {
           // roll the personal timer forward one full cycle
           write(OWN_KEY, String(Date.now() + period * 1000));
@@ -143,6 +159,18 @@ export default function BossTimer() {
     const next = !sound;
     write(SOUND_KEY, next ? "1" : "0");
     if (next) chimeWarn(); // preview, and unlocks audio for the later plays
+  };
+
+  const toggleNotifications = async () => {
+    if (notifications) {
+      write(NOTIFY_KEY, "0");
+      return;
+    }
+    const granted = await requestNotifications();
+    write(NOTIFY_KEY, granted ? "1" : "0");
+    if (granted) {
+      void notify("เปิดแจ้งเตือนแล้ว", "จะเตือนก่อนประตูบอสเปิด 1 นาที · Alerts are on", "sp-boss");
+    }
   };
 
   const saveOwn = (e: React.FormEvent) => {
@@ -190,6 +218,22 @@ export default function BossTimer() {
               }`}
             >
               {sound ? "🔔 เตือนก่อน 1 นาที · Alert on" : "🔕 ไม่เตือน · Alert off"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void toggleNotifications()}
+              aria-pressed={notifications}
+              title={
+                notificationPermission() === "denied"
+                  ? "เบราว์เซอร์บล็อกการแจ้งเตือนไว้ ต้องไปเปิดในตั้งค่าเว็บไซต์"
+                  : undefined
+              }
+              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                notifications ? "bg-grape-500 text-white" : "bg-surface-3 text-ink-2 hover:text-ink"
+              }`}
+            >
+              {notifications ? "🔔 แจ้งเตือนเปิด · Notify on" : "💬 แจ้งเตือน · Notify"}
             </button>
 
             <button
