@@ -206,7 +206,11 @@ export default function BossTimer() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-grape-500 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-grape-500" />
               </span>
-              {usingOwn ? "จับเวลาเอง · Your timer" : "เวลาเซิร์ฟเวอร์ · Server time"}
+              {usingOwn
+                ? "จับเวลาเอง · Your timer"
+                : state.boss.source === "clock"
+                  ? "ตามนาฬิกา :00 / :30 · Clock estimate"
+                  : "เวลาเซิร์ฟเวอร์ · Server time"}
             </span>
 
             <button
@@ -316,6 +320,16 @@ export default function BossTimer() {
                   </>
                 )}
               </p>
+
+              {!usingOwn && state.boss.source === "clock" && (
+                <p className="mt-2 max-w-md text-[11.5px] leading-relaxed text-ink-3">
+                  ตัวเลขนี้เดาจากนาฬิกา (นาทีที่ :00 กับ :30) ยังไม่ได้ยืนยันกับในเกม —
+                  กด <b className="text-ink-2">ตั้งเวลาจากในเกม</b> แล้วกรอกตามจอตัวเอง จะแม่นกว่า
+                  <span className="mt-0.5 block">
+                    Estimated from the clock and not yet verified in game; your own countdown is the authority.
+                  </span>
+                </p>
+              )}
             </>
           ) : (
             <>

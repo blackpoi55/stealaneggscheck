@@ -10,6 +10,8 @@ const BANNERS = 3;
 
 export interface EventTimer {
   configured: boolean;
+  /** where the countdown came from — `clock` is the unverified fallback */
+  source?: "anchor" | "clock";
   secondsToNext?: number;
   periodSeconds: number;
   /** rift eggs only */
@@ -39,7 +41,12 @@ export async function eventsState(): Promise<EventsState> {
   // `cycles` counts whole periods since the anchor (negative while the anchor
   // is still ahead); the modulo is normalised because Postgres keeps the sign
   // of the dividend.
-  const rows = (await sql`
+  // With no anchor set, fall back to the wall clock: half-hour events in these
+  // games usually land on :00 and :30, and Thailand is a whole-hour offset so
+  // the UTC boundary is the local one too. Flagged as an assumption in the UI.
+  const [[clock], rows] = (await Promise.all([
+    sql`select (${BOSS_PERIOD} - mod(extract(epoch from now())::numeric, ${BOSS_PERIOD}))::int as seconds`,
+    sql`
     select
       key,
       period_seconds,
@@ -52,14 +59,22 @@ export async function eventsState(): Promise<EventsState> {
         )
       )::int as seconds_to_next
     from event_anchor
-  `) as { key: string; period_seconds: number; meta: number | null; cycles: number; seconds_to_next: number }[];
+  `,
+  ])) as [{ seconds: number }[], { key: string; period_seconds: number; meta: number | null; cycles: number; seconds_to_next: number }[]];
 
   const read = (key: string, fallbackPeriod: number): EventTimer => {
     const row = rows.find((r) => r.key === key);
-    if (!row) return { configured: false, periodSeconds: fallbackPeriod };
+    if (!row) {
+      // only the boss has a sensible clock default; the egg rotation's phase
+      // cannot be guessed
+      return key === "boss"
+        ? { configured: true, source: "clock", secondsToNext: clock.seconds, periodSeconds: fallbackPeriod }
+        : { configured: false, periodSeconds: fallbackPeriod };
+    }
 
     const timer: EventTimer = {
       configured: true,
+      source: "anchor",
       periodSeconds: row.period_seconds,
       secondsToNext: Math.max(0, Math.min(row.period_seconds, row.seconds_to_next)),
     };
