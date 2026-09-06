@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import CollectTick, { useCollected } from "./CollectTick";
-import RiftTimer from "./RiftTimer";
+import BossTimer from "./BossTimer";
+import RiftEggRotation from "./RiftEggRotation";
 import { RARITY_BY_ID, cashReward, compact, money } from "@/data/steal-an-egg";
 import {
   LIMITED_BY_SOURCE,
@@ -135,7 +136,7 @@ export default function LimitedSection() {
         </div>
 
         <div className="mt-8">
-          <RiftTimer />
+          <BossTimer />
         </div>
 
         <div className="mt-8 space-y-12">
@@ -179,6 +180,8 @@ export default function LimitedSection() {
                     </div>
                   </div>
                 </div>
+
+                {group.id === "rift" && <RiftEggRotation />}
 
                 {banners.length > 0
                   ? banners.map((b) => (

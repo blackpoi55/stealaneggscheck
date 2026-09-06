@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { riftState } from "../rift/route";
+import { BOSS_PERIOD, RIFT_EGG_PERIOD, eventsState } from "../events/route";
 
 export const dynamic = "force-dynamic";
 
@@ -21,17 +21,17 @@ export async function GET(request: Request) {
   if (denied) return NextResponse.json({ error: denied }, { status: 401 });
   if (!sql) return NextResponse.json({ error: "ไม่มีฐานข้อมูล · No database" }, { status: 503 });
 
-  const [comments, blocks, [views], rift] = await Promise.all([
+  const [comments, blocks, [views], events] = await Promise.all([
     sql`select id, name, message, ip, ip_hash, hidden, created_at
         from comments order by created_at desc limit 200`,
     sql`select ip_hash, ip, reason, created_at from blocked_ips order by created_at desc limit 200`,
     sql`select count(*)::int as total,
                count(*) filter (where day = current_date)::int as today
         from visits`,
-    riftState(),
+    eventsState(),
   ]);
 
-  return NextResponse.json({ comments, blocks, views, rift });
+  return NextResponse.json({ comments, blocks, views, events });
 }
 
 /** Body: { action: "hide" | "show" | "delete", id } or { action: "block" | "unblock", ipHash, ip?, reason? } */
@@ -47,6 +47,7 @@ export async function POST(request: Request) {
     ip?: string;
     reason?: string;
     minutesLeft?: number;
+    secondsLeft?: number;
     currentBanner?: number;
   };
 
@@ -77,19 +78,31 @@ export async function POST(request: Request) {
       await sql`update comments set hidden = true where ip_hash = ${body.ipHash}`;
       return NextResponse.json({ ok: true });
     }
+    case "boss": {
+      const seconds = Number(body.minutesLeft ?? 0) * 60 + Number(body.secondsLeft ?? 0);
+      if (!Number.isFinite(seconds) || seconds < 0 || seconds > BOSS_PERIOD) break;
+      await sql`
+        insert into event_anchor (key, next_at, period_seconds, meta, updated_at)
+        values ('boss', now() + make_interval(secs => ${seconds}), ${BOSS_PERIOD}, null, now())
+        on conflict (key) do update
+          set next_at = excluded.next_at, period_seconds = excluded.period_seconds, updated_at = now()
+      `;
+      return NextResponse.json({ ok: true });
+    }
     case "rift": {
       const minutes = Number(body.minutesLeft);
       const banner = Number(body.currentBanner);
       if (!Number.isFinite(minutes) || minutes < 0 || minutes > 180) break;
       if (![1, 2, 3].includes(banner)) break;
-      // rotates_at is the next rotation; `banner` records what starts then
+      // next_at is the coming rotation; meta records the set that starts then
       const next = (banner % 3) + 1;
       await sql`
-        insert into rift_anchor (id, rotates_at, banner, updated_at)
-        values (1, now() + make_interval(mins => ${minutes}), ${next}, now())
-        on conflict (id) do update
-          set rotates_at = excluded.rotates_at,
-              banner = excluded.banner,
+        insert into event_anchor (key, next_at, period_seconds, meta, updated_at)
+        values ('rift-eggs', now() + make_interval(mins => ${minutes}), ${RIFT_EGG_PERIOD}, ${next}, now())
+        on conflict (key) do update
+          set next_at = excluded.next_at,
+              period_seconds = excluded.period_seconds,
+              meta = excluded.meta,
               updated_at = now()
       `;
       return NextResponse.json({ ok: true });

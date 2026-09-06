@@ -23,7 +23,10 @@ interface AdminData {
   comments: AdminComment[];
   blocks: Block[];
   views: { total: number; today: number };
-  rift: { configured: boolean; currentBanner?: number; secondsToRotation?: number };
+  events: {
+    boss: { configured: boolean; secondsToNext?: number };
+    riftEggs: { configured: boolean; currentBanner?: number; secondsToNext?: number };
+  };
 }
 
 export default function AdminPage() {
@@ -31,6 +34,8 @@ export default function AdminPage() {
   const [data, setData] = useState<AdminData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [bossMin, setBossMin] = useState("");
+  const [bossSec, setBossSec] = useState("");
   const [minutesLeft, setMinutesLeft] = useState("");
   const [currentBanner, setCurrentBanner] = useState("1");
 
@@ -106,10 +111,60 @@ export default function AdminPage() {
           </p>
 
           <section className="card mt-6 rounded-2xl p-4">
-            <h2 className="headline text-[17px] text-ink">ตัวจับเวลา Rift</h2>
+            <h2 className="headline text-[17px] text-ink">ประตูบอส (ทุก 30 นาที)</h2>
             <p className="mt-1 text-[12.5px] text-ink-3">
-              {data.rift.configured
-                ? `ตอนนี้ชุดที่ ${data.rift.currentBanner} · เปลี่ยนในอีก ${Math.floor((data.rift.secondsToRotation ?? 0) / 60)} นาที`
+              {data.events.boss.configured
+                ? `เปิดอีกครั้งในอีก ${Math.floor((data.events.boss.secondsToNext ?? 0) / 60)}:${String((data.events.boss.secondsToNext ?? 0) % 60).padStart(2, "0")} นาที`
+                : "ยังไม่ได้ตั้ง — ดูตัวเลขนับถอยหลังในเกมแล้วกรอก"}
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void act({
+                  action: "boss",
+                  minutesLeft: Number(bossMin || 0),
+                  secondsLeft: Number(bossSec || 0),
+                });
+              }}
+              className="mt-3 flex flex-wrap items-end gap-2"
+            >
+              <label className="text-[12px] text-ink-3">
+                นาที
+                <input
+                  type="number"
+                  min={0}
+                  max={30}
+                  value={bossMin}
+                  onChange={(e) => setBossMin(e.target.value)}
+                  className="mt-1 block w-20 rounded-xl bg-surface-2 px-3 py-2 text-[14px] text-ink outline-none focus:ring-2 focus:ring-candy-500"
+                />
+              </label>
+              <label className="text-[12px] text-ink-3">
+                วินาที
+                <input
+                  type="number"
+                  min={0}
+                  max={59}
+                  value={bossSec}
+                  onChange={(e) => setBossSec(e.target.value)}
+                  className="mt-1 block w-20 rounded-xl bg-surface-2 px-3 py-2 text-[14px] text-ink outline-none focus:ring-2 focus:ring-candy-500"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-xl bg-candy-500 px-4 py-2 text-[14px] font-semibold text-white transition hover:bg-candy-600 disabled:opacity-40"
+              >
+                บันทึก
+              </button>
+            </form>
+          </section>
+
+          <section className="card mt-4 rounded-2xl p-4">
+            <h2 className="headline text-[17px] text-ink">ชุดไข่ริฟต์ (ทุก 3 ชม.)</h2>
+            <p className="mt-1 text-[12.5px] text-ink-3">
+              {data.events.riftEggs.configured
+                ? `ตอนนี้ชุดที่ ${data.events.riftEggs.currentBanner} · เปลี่ยนในอีก ${Math.floor((data.events.riftEggs.secondsToNext ?? 0) / 60)} นาที`
                 : "ยังไม่ได้ตั้ง — เปิดเกมดูว่าเหลืออีกกี่นาทีและตอนนี้เป็นชุดไหน"}
             </p>
             <form
