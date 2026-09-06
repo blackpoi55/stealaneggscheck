@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { chimeNow, chimeWarn } from "@/lib/chime";
+import { chimeWarn } from "@/lib/chime";
 import { notificationPermission, notify, requestNotifications } from "@/lib/notify";
 import type { EventsState } from "@/app/api/events/route";
 
@@ -9,13 +9,7 @@ export const BOSS_ANCHOR = "boss";
 
 const SOUND_KEY = "sp-boss-sound";
 const NOTIFY_KEY = "sp-boss-notify";
-/** Three reminders on the way down, not one. */
-const ALERTS = [
-  { at: 300, th: "อีก 5 นาที ประตูบอสจะเปิด", en: "Boss rift opens in 5 minutes", label: "5 นาที" },
-  { at: 60, th: "อีก 1 นาที ประตูบอสจะเปิด", en: "Boss rift opens in 1 minute", label: "1 นาที" },
-  { at: 0, th: "ประตูบอสเปิดแล้ว!", en: "The rift is open — go fight the Abyss Overlord", label: "ตอนเปิด" },
-] as const;
-
+/** The single heads-up, one minute before the portal opens. */
 const WARN_SECONDS = 60;
 const RESYNC_MS = 10 * 60 * 1000;
 const HALF_HOUR_MS = 30 * 60 * 1000;
@@ -81,8 +75,10 @@ export default function BossTimer() {
   // "seconds remaining", so a wrong clock on the visitor's device changes
   // nothing.
   const seed = useRef<{ seconds: number; at: number } | null>(null);
-  /** thresholds already dealt with, so re-syncing never re-alerts */
-  const done = useRef(new Set<number>());
+  /** so a re-sync never replays an alert that has already sounded */
+  const warned = useRef(false);
+  /** when the last "we hit zero, ask for the new cycle" attempt went out */
+  const zeroSyncAt = useRef(0);
 
   const sync = useCallback(async () => {
     try {
@@ -92,8 +88,8 @@ export default function BossTimer() {
         const seconds = data.boss.secondsToNext;
         seed.current = { seconds, at: performance.now() };
         setLeft(seconds);
-        // anything already passed when the page loaded is not worth announcing
-        done.current = new Set(ALERTS.filter((a) => seconds <= a.at).map((a) => a.at));
+        // a window already passed when the page loaded is not worth announcing
+        warned.current = seconds <= WARN_SECONDS;
       }
     } catch {
       // keep whatever we last knew
@@ -116,15 +112,24 @@ export default function BossTimer() {
       const remaining = Math.max(0, Math.round(s.seconds - (performance.now() - s.at) / 1000));
       setLeft(remaining);
 
-      for (const alert of ALERTS) {
-        if (remaining > alert.at || done.current.has(alert.at)) continue;
-        done.current.add(alert.at);
+      if (remaining <= WARN_SECONDS && remaining > 0 && !warned.current) {
+        warned.current = true;
+        if (soundOn()) chimeWarn();
+        if (notifyOn()) {
+          void notify("อีก 1 นาที ประตูบอสจะเปิด", "Boss rift opens in 1 minute", "sp-boss");
+        }
+      }
 
-        const opening = alert.at === 0;
-        if (soundOn()) (opening ? chimeNow : chimeWarn)();
-        if (notifyOn()) void notify(alert.th, alert.en, "sp-boss");
-        // the countdown restarts server-side the moment it opens
-        if (opening) setTimeout(() => void sync(), 2000);
+      // The cycle restarts server-side the moment it opens, so refresh
+      // silently. Keep retrying rather than firing once: a dropped request or
+      // a throttled background tab would otherwise strand the display on
+      // 00:00 until the next ten-minute sync.
+      if (remaining === 0) {
+        const now = performance.now();
+        if (now - zeroSyncAt.current > 5000) {
+          zeroSyncAt.current = now;
+          void sync();
+        }
       }
     }, 250);
     return () => clearInterval(tick);
@@ -228,18 +233,8 @@ export default function BossTimer() {
           <p className="num mt-1 text-[11.5px] text-ink-3">รอบถัดไป · then {following.join(" · ")}</p>
 
           {(sound || notifications) && (
-            <p className="mt-2 inline-flex flex-wrap items-center gap-1.5 text-[11.5px] text-ink-3">
-              เตือน 3 จังหวะ ·
-              {ALERTS.map((a) => (
-                <span
-                  key={a.at}
-                  className={`rounded-full px-2 py-[2px] font-medium ${
-                    left > a.at ? "bg-surface-2 text-ink-2" : "bg-mint-600/15 text-mint-600 line-through"
-                  }`}
-                >
-                  {a.label}
-                </span>
-              ))}
+            <p className="mt-2 text-[11.5px] text-ink-3">
+              เตือนตอนเหลือ 1 นาที · Alerts one minute before it opens
             </p>
           )}
         </div>

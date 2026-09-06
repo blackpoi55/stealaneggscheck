@@ -49,8 +49,5 @@ function play(notes: number[], gap: number, repeats: number) {
   }
 }
 
-/** heads-up: a rising figure, three times over */
+/** heads-up before an event, sounded three times over */
 export const chimeWarn = (repeats = 3) => play([880, 1108.73, 1318.51], 0.16, repeats);
-
-/** it is happening now: a shorter, falling one */
-export const chimeNow = (repeats = 3) => play([1318.51, 1046.5], 0.14, repeats);
