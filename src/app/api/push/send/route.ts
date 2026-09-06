@@ -6,9 +6,13 @@ import { eventsState } from "../../events/route";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** Send when the portal is this close, so a once-a-minute cron always lands. */
-const WINDOW_MIN = 20;
-const WINDOW_MAX = 90;
+/**
+ * Send when the portal is this close. The upper bound keeps a too-early
+ * trigger from firing two minutes out; there is no lower bound so a cron that
+ * runs late still delivers something rather than skipping the cycle.
+ */
+const WINDOW_MIN = 0;
+const WINDOW_MAX = 100;
 
 const configured = () =>
   Boolean(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
@@ -20,9 +24,10 @@ interface Row {
 }
 
 /**
- * Called by an external cron every minute. It decides for itself whether this
- * is the right moment, so the schedule lives here rather than in the cron's
- * configuration, and a double call cannot send twice.
+ * Called by an external cron. It decides for itself whether this is the right
+ * moment, so the schedule lives here rather than in the cron's configuration,
+ * and a double call cannot send twice — which means the cron can be as coarse
+ * as `29,59 * * * *` or as fine as every minute.
  *
  * `?force=1` sends immediately regardless of the clock, for testing.
  */
