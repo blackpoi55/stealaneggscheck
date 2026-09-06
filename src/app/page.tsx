@@ -2,11 +2,13 @@ import Image from "next/image";
 import Comments from "@/components/Comments";
 import Explorer from "@/components/Explorer";
 import InstallGuide from "@/components/InstallGuide";
+import LimitedSection from "@/components/LimitedSection";
 import Logo from "@/components/Logo";
 import SiteNav from "@/components/SiteNav";
 import VisitorCounter from "@/components/VisitorCounter";
 import { BrowseProvider } from "@/components/browse-context";
-import { BIOMES, EGGS, RARITIES, RARITY_BY_ID, SITE, eggImg, money } from "@/data/steal-an-egg";
+import { LIMITED_PETS } from "@/data/limited";
+import { BIOMES, EGGS, RARITY_BY_ID, SITE, eggImg, money } from "@/data/steal-an-egg";
 
 /** The three Divine eggs carry the hero — the rarest art in the game. */
 const SHOWCASE = ["kitsune", "nightflame", "unicorn"]
@@ -16,9 +18,9 @@ const SHOWCASE = ["kitsune", "nightflame", "unicorn"]
 export default function Home() {
   const stats = [
     { value: String(BIOMES.length), th: "ไบโอม", en: "Biomes" },
-    { value: String(EGGS.length), th: "ไข่ทั้งหมด", en: "Eggs" },
-    { value: String(RARITIES.length), th: "ระดับหายาก", en: "Rarity tiers" },
-    { value: money(Math.max(...EGGS.map((e) => e.income))) + "/s", th: "รายได้สูงสุด", en: "Top income" },
+    { value: String(EGGS.length), th: "ไข่ตามไบโอม", en: "Biome eggs" },
+    { value: String(LIMITED_PETS.length), th: "เพ็ตลิมิเต็ด", en: "Limited" },
+        { value: money(Math.max(...EGGS.map((e) => e.income))) + "/s", th: "รายได้สูงสุด", en: "Top income" },
   ];
 
   return (
@@ -125,8 +127,11 @@ export default function Home() {
         <Explorer />
       </main>
 
+      {/* ── limited eggs ──────────────────────────────────────────────── */}
+      <LimitedSection />
+
       {/* ── install as an app ─────────────────────────────────────────── */}
-      <div className="border-t rule bg-surface-2">
+      <div className="border-t rule">
         <InstallGuide />
       </div>
 

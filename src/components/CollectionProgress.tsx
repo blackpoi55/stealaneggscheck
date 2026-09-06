@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useCollected } from "./CollectTick";
 import { clearAll, replaceAll } from "@/lib/collection";
 import { BIOMES, EGGS } from "@/data/steal-an-egg";
+import { LIMITED_PETS } from "@/data/limited";
 
 const PER_BIOME = BIOMES.map((b) => ({ biome: b, ids: EGGS.filter((e) => e.biome === b.id).map((e) => e.id) }));
 
@@ -14,6 +15,8 @@ export default function CollectionProgress() {
   const total = EGGS.length;
   const have = EGGS.reduce((n, e) => n + (collected.has(e.id) ? 1 : 0), 0);
   const pct = Math.round((have / total) * 100);
+
+  const limitedHave = LIMITED_PETS.reduce((n, p) => n + (collected.has(p.id) ? 1 : 0), 0);
 
   const exportFile = () => {
     const blob = new Blob([JSON.stringify({ collected: [...collected] }, null, 2)], {
@@ -33,7 +36,7 @@ export default function CollectionProgress() {
       const ids =
         Array.isArray(data) ? data : (data as { collected?: unknown })?.collected;
       if (!Array.isArray(ids)) throw new Error("bad shape");
-      const valid = new Set(EGGS.map((e) => e.id));
+      const valid = new Set([...EGGS.map((e) => e.id), ...LIMITED_PETS.map((p) => p.id)]);
       replaceAll(ids.filter((v): v is string => typeof v === "string" && valid.has(v)));
     } catch {
       alert("ไฟล์ไม่ถูกต้อง · That file could not be read");
@@ -55,8 +58,15 @@ export default function CollectionProgress() {
             </span>
           </p>
           <p className="text-[12.5px] text-ink-3">
-            กดวงกลม ✓ บนไข่เพื่อบันทึกว่าเก็บแล้ว · Tap the ✓ on an egg to tick it off
+            ไข่ตามไบโอม · Biome eggs — กดวงกลม ✓ บนไข่เพื่อบันทึก
           </p>
+          <a
+            href="#limited"
+            className="num mt-2 inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-[12px] font-medium text-ink-2 transition hover:text-ink"
+          >
+            + เพ็ตลิมิเต็ด {limitedHave}/{LIMITED_PETS.length}
+            <span className="text-ink-3">Limited ›</span>
+          </a>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">

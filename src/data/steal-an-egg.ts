@@ -363,7 +363,7 @@ export function compact(n: number): string {
 export const money = (n: number) => `$${compact(n)}`;
 
 /** First-collection cash bonus — every source lists it as income x 100. */
-export const cashReward = (egg: Egg) => egg.income * 100;
+export const cashReward = (egg: { income: number }) => egg.income * 100;
 
 export const eggImg = (id: string) => `/img/eggs/${id}.webp`;
 export const petImg = (id: string) => `/img/pets/${id}.webp`;

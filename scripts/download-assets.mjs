@@ -129,6 +129,57 @@ const BIOME_ART = {
   "titan-temple": "1/1e/Titan_Temple_Guardian_Steal_Egg.png",
 };
 
+
+/** Limited pets (Brainrot / Monster / Rift eggs) — art lives on the IGN wiki. */
+const LIMITED_ART = {
+  "tung-tung-sahur": "b/b0/Tung_Tung_Sahur_Icon.png",
+  "bananita-dolphinita": "6/60/Bananita_Dolphinita_Icon.png",
+  "belula-beluga": "c/ce/Belula_Beluga_Icon.png",
+  "mangolini-parrochini": "7/70/Mangolini_Parrochini_Icon.png",
+  "bomboclat-crocolat": "f/f3/Crocolat_Icon.png",
+  "strawberry-elephant": "f/fd/Strawberry_Elephant_Steal_Egg.png",
+
+  scorpio: "6/69/Scorpio_Icon.png",
+  froggo: "e/ed/Froggo_Icon.png",
+  crawler: "3/3f/Crawler_icon.png",
+  crocodon: "4/46/Crocodon_Icon.png",
+  krakenoid: "c/c6/Krakenoid.png",
+  dreadscale: "3/3b/Dreadscale.png",
+  "mecha-scorpio": "3/39/Mecha_Scorpion_Icon.png",
+  "mecha-froggo": "c/c2/Mecha_Froggo_Icon.png",
+  "mecha-crawler": "9/98/Mecha_Crawler_Icon.png",
+  "mecha-crocodon": "2/26/Mecha_Crocodon_Icon.png",
+  "mecha-krakenoid": "2/23/Mecha_Krakenoid_Icon.png",
+  "mecha-dreadscale": "6/6b/Mecha_Dreadscale_Icon.png",
+
+  "rift-eye": "1/15/Rift_Eye_Steal_Egg.png",
+  voidmaw: "3/3d/Voidmaw_Steal_Egg.png",
+  ventinal: "e/ea/Ventinal_Steal_Egg.png",
+  wendigo: "4/4e/Wendigo_Steal_Egg.png",
+  "world-eater": "3/3b/World_Eater_Steal_Egg.png",
+  "void-angler": "9/9b/Void_Angler_Steal_Egg.png",
+  riftwing: "8/88/Riftwing_Steal_Egg.png",
+  dreadclaw: "2/2f/Dreadclaw_Steal_Egg.png",
+  mawbreaker: "e/ed/Mawbreaker_Steal_Egg.png",
+  "void-serpent": "d/d9/Void_Serpent_Steal_Egg.png",
+  shardling: "3/38/Shardling_Steal_Egg.png",
+  "shattered-ram": "c/c7/Shattered_Ram_Steal_Egg.png",
+  shardwing: "c/cb/Shardwing_Steal_Egg.png",
+  "shattered-drake": "4/40/Shattered_Drake_Steal_Egg.png",
+  "shattered-colossus": "a/ac/Shattered_Colossus_Steal_Egg.png",
+};
+
+/** Banner art for the three limited sources. */
+const LIMITED_GROUP_ART = {
+  monster: "1/18/Monster_Eggs_Steal_an_Egg.png",
+  rift: "8/80/The_Rift_Rotation_Steal_Egg.png",
+};
+
+const LIMITED_EGG_ART = {
+  monster: "1/18/Monster_Eggs_Steal_an_Egg.png",
+  rift: "1/1a/Riftborn_Egg.png",
+};
+
 const exists = (p) => access(p).then(() => true, () => false);
 
 async function grab(urls, dest) {
@@ -165,6 +216,15 @@ for (const [id, [eggFile, petFile]] of Object.entries(ART)) {
 }
 for (const [id, path] of Object.entries(BIOME_ART)) {
   jobs.push(["biome", id, [`${IGN}/${path}`], `${ROOT}/public/img/biomes/${id}.png`]);
+}
+for (const [id, path] of Object.entries(LIMITED_ART)) {
+  jobs.push(["limited", id, [`${IGN}/${path}`], `${ROOT}/public/img/limited/${id}.png`]);
+}
+for (const [id, path] of Object.entries(LIMITED_GROUP_ART)) {
+  jobs.push(["group", id, [`${IGN}/${path}`], `${ROOT}/public/img/limited/group-${id}.png`]);
+}
+for (const [id, path] of Object.entries(LIMITED_EGG_ART)) {
+  jobs.push(["egg", id, [`${IGN}/${path}`], `${ROOT}/public/img/limited/egg-${id}.png`]);
 }
 
 const failures = [];

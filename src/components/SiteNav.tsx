@@ -6,10 +6,11 @@ import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import { biomeAnchor, useBrowse } from "./browse-context";
 import { BIOMES, SITE, biomeImg, type BiomeId } from "@/data/steal-an-egg";
+import { limitedGroupImg } from "@/data/limited";
 
 export default function SiteNav() {
   const { jumpTo } = useBrowse();
-  const [active, setActive] = useState<BiomeId | "all">("all");
+  const [active, setActive] = useState<BiomeId | "all" | "limited">("all");
   const headerRef = useRef<HTMLElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
 
@@ -34,11 +35,13 @@ export default function SiteNav() {
       const filterH =
         parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--filter-h")) || 104;
       const y = window.scrollY + (headerRef.current?.offsetHeight ?? 112) + filterH + 60;
-      let current: BiomeId | "all" = "all";
+      let current: BiomeId | "all" | "limited" = "all";
       for (const b of BIOMES) {
         const el = document.getElementById(biomeAnchor(b.id));
         if (el && el.getBoundingClientRect().top + window.scrollY <= y) current = b.id;
       }
+      const limited = document.getElementById("limited");
+      if (limited && limited.getBoundingClientRect().top + window.scrollY <= y) current = "limited";
       setActive(current);
     };
     const onScroll = () => {
@@ -115,6 +118,14 @@ export default function SiteNav() {
                 accent={b.accent[0]}
               />
             ))}
+            <BiomeChip
+              active={active === "limited"}
+              onClick={() => jumpTo("limited")}
+              th="ลิมิเต็ด"
+              en="Limited"
+              img={limitedGroupImg("monster")}
+              accent="#f97316"
+            />
           </div>
         </nav>
       </div>

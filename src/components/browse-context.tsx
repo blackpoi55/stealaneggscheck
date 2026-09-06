@@ -50,7 +50,7 @@ interface BrowseState {
   dirty: boolean;
   reset: () => void;
   /** the nav navigates — this scrolls to a biome section, it does not filter */
-  jumpTo: (id: BiomeId | "all") => void;
+  jumpTo: (id: BiomeId | "all" | "limited") => void;
 }
 
 const Ctx = createContext<BrowseState | null>(null);
@@ -102,7 +102,7 @@ export function BrowseProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const jumpTo = useCallback(
-    (id: BiomeId | "all") => {
+    (id: BiomeId | "all" | "limited") => {
       // Fast path: the section is already on the page, so scroll right away.
       if (scrollToSection(id)) return;
 
@@ -140,8 +140,9 @@ function afterPaint(fn: () => void) {
 }
 
 /** Scrolls a biome section into view. Returns false when it isn't rendered. */
-function scrollToSection(id: BiomeId | "all") {
-  const el = document.getElementById(id === "all" ? BROWSE_ANCHOR : biomeAnchor(id));
+function scrollToSection(id: BiomeId | "all" | "limited") {
+  const anchor = id === "all" ? BROWSE_ANCHOR : id === "limited" ? "limited" : biomeAnchor(id);
+  const el = document.getElementById(anchor);
   if (!el) return false;
   // Smooth-scrolling the length of an 88-egg page takes seconds; snap instead
   // once the target is more than a couple of screens away.
