@@ -2,34 +2,63 @@
 
 import { useSyncExternalStore } from "react";
 
-const ROOT_CLASS = "dark";
 const STORAGE_KEY = "sp-theme";
 
-/** The <html> class is the source of truth — layout.tsx sets it before paint. */
+/**
+ * The <html> class is the source of truth: `dark` / `light` when the visitor
+ * has chosen, otherwise neither and the OS setting decides (see globals.css).
+ * layout.tsx replays the stored choice before first paint.
+ */
 function subscribe(onChange: () => void) {
-  const obs = new MutationObserver(onChange);
-  obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-  return () => obs.disconnect();
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+  // with no explicit choice the OS drives the theme, so watch that too
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", onChange);
+
+  // another tab may have changed the saved preference
+  const onStorage = (e: StorageEvent) => {
+    if (e.key !== STORAGE_KEY) return;
+    apply(e.newValue === "dark" ? "dark" : e.newValue === "light" ? "light" : null);
+  };
+  window.addEventListener("storage", onStorage);
+
+  return () => {
+    observer.disconnect();
+    media.removeEventListener("change", onChange);
+    window.removeEventListener("storage", onStorage);
+  };
 }
 
-const getSnapshot = () => document.documentElement.classList.contains(ROOT_CLASS);
+const noopSubscribe = () => () => {};
+
+/** Whatever the visitor actually sees right now. */
+function getSnapshot() {
+  const root = document.documentElement;
+  if (root.classList.contains("dark")) return true;
+  if (root.classList.contains("light")) return false;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function apply(theme: "dark" | "light" | null) {
+  const root = document.documentElement;
+  root.classList.toggle("dark", theme === "dark");
+  root.classList.toggle("light", theme === "light");
+}
 
 export default function ThemeToggle({ className = "" }: { className?: string }) {
-  // `false` on the server: the icon is hidden until hydration either way.
   const isDark = useSyncExternalStore(subscribe, getSnapshot, () => false);
-  const mounted = useSyncExternalStore(
-    subscribe,
-    () => true,
-    () => false
-  );
+  // the server cannot know the theme, so the icon stays blank until hydration
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
 
   const toggle = () => {
-    const next = !isDark;
-    document.documentElement.classList.toggle(ROOT_CLASS, next);
+    const next = isDark ? "light" : "dark";
+    apply(next);
     try {
-      localStorage.setItem(STORAGE_KEY, next ? "dark" : "light");
+      localStorage.setItem(STORAGE_KEY, next);
     } catch {
-      // private mode — the choice just won't persist
+      // private mode — the choice just won't survive a reload
     }
   };
 
