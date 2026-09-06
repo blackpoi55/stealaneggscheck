@@ -28,7 +28,16 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   applicationName: "SweetParadise",
   appleWebApp: { capable: true, title: "SweetParadise", statusBarStyle: "default" },
-  icons: { apple: "/icons/apple-touch-icon.png" },
+  // Declared explicitly: as soon as `icons` is set, Next stops emitting the
+  // link tag for the src/app icon file convention.
+  icons: {
+    icon: [
+      { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/icons/apple-touch-icon.png",
+  },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,

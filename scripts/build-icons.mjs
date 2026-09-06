@@ -2,7 +2,7 @@
 // (That file is actually WebP data — sharp sniffs the real format, so the
 // generated PNGs are genuine PNGs regardless of the source extension.)
 import sharp from "sharp";
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,7 +15,7 @@ await mkdir(ICONS, { recursive: true });
 const square = (size) => sharp(SRC).resize(size, size, { fit: "cover" }).png({ compressionLevel: 9 });
 
 // Plain icons — the artwork fills the tile.
-for (const size of [192, 512]) {
+for (const size of [32, 192, 512]) {
   await square(size).toFile(`${ICONS}/icon-${size}.png`);
 }
 
@@ -43,7 +43,22 @@ await sharp({
   .png({ compressionLevel: 9 })
   .toFile(`${ICONS}/icon-maskable-512.png`);
 
-// Next.js file convention: src/app/icon.png becomes the site favicon.
-await square(96).toFile(`${ROOT}/src/app/icon.png`);
+// A real /favicon.ico for bare requests from bookmarks, crawlers and chat
+// unfurlers. Since Vista an .ico may simply wrap a PNG, so the container is
+// a 6-byte header plus one 16-byte directory entry.
+const ico = await square(32).toBuffer();
+const header = Buffer.alloc(22);
+header.writeUInt16LE(0, 0); // reserved
+header.writeUInt16LE(1, 2); // type: icon
+header.writeUInt16LE(1, 4); // one image
+header.writeUInt8(32, 6); // width
+header.writeUInt8(32, 7); // height
+header.writeUInt8(0, 8); // palette size
+header.writeUInt8(0, 9); // reserved
+header.writeUInt16LE(1, 10); // colour planes
+header.writeUInt16LE(32, 12); // bits per pixel
+header.writeUInt32LE(ico.byteLength, 14);
+header.writeUInt32LE(22, 18); // offset of the image data
+await writeFile(`${ROOT}/public/favicon.ico`, Buffer.concat([header, ico]));
 
-console.log("icons written to public/icons and src/app/icon.png");
+console.log("icons written to public/icons + public/favicon.ico");
