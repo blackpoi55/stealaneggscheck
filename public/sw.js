@@ -1,6 +1,6 @@
 /* SweetParadise egg guide — offline support.
    Bump CACHE when the caching rules change; old caches are dropped on activate. */
-const CACHE = "sp-eggs-v2";
+const CACHE = "sp-eggs-v3";
 const OFFLINE_URL = "/";
 
 self.addEventListener("install", (event) => {
@@ -29,6 +29,32 @@ const isImmutable = (url) =>
   url.pathname.startsWith("/_next/static/") ||
   url.pathname.startsWith("/_next/image");
 
+// A push arrives even with the site closed; the browser wakes this worker
+// just long enough to show something, which it requires us to do.
+self.addEventListener("push", (event) => {
+  let payload = {
+    title: "ประตูบอสใกล้เปิดแล้ว",
+    body: "Boss rift opens in 1 minute",
+    url: "/#boss",
+  };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch {
+    // not JSON — keep the defaults
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      tag: "sp-boss",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-32.png",
+      lang: "th",
+      data: { url: payload.url },
+    })
+  );
+});
+
 // Tapping a timer notification should bring the site forward rather than
 // opening a second copy of it.
 self.addEventListener("notificationclick", (event) => {
@@ -38,7 +64,7 @@ self.addEventListener("notificationclick", (event) => {
       for (const client of clients) {
         if ("focus" in client) return client.focus();
       }
-      return self.clients.openWindow("/#boss");
+      return self.clients.openWindow(event.notification.data?.url ?? "/#boss");
     })
   );
 });

@@ -51,6 +51,21 @@ const statements = [
    )`,
   `drop table if exists rift_anchor`,
 
+  // one row per browser that opted into push
+  `create table if not exists push_subs (
+     endpoint text primary key,
+     p256dh text not null,
+     auth text not null,
+     user_agent text,
+     created_at timestamptz not null default now()
+   )`,
+  // guards against sending twice for the same opening when the cron overlaps
+  `create table if not exists push_log (
+     bucket bigint primary key,
+     sent_at timestamptz not null default now(),
+     recipients int not null default 0
+   )`,
+
   `create table if not exists blocked_ips (
      ip_hash text primary key,
      ip text,

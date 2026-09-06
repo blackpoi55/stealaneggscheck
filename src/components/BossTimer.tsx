@@ -3,12 +3,16 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { chimeWarn } from "@/lib/chime";
 import { notificationPermission, notify, requestNotifications } from "@/lib/notify";
+import { pushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push";
+import Switch from "./Switch";
 import type { EventsState } from "@/app/api/events/route";
 
 export const BOSS_ANCHOR = "boss";
 
 const SOUND_KEY = "sp-boss-sound";
 const NOTIFY_KEY = "sp-boss-notify";
+/** set once the server has confirmed it holds this browser's subscription */
+const PUSH_KEY = "sp-boss-push";
 /** The single heads-up, one minute before the portal opens. */
 const WARN_SECONDS = 60;
 const RESYNC_MS = 10 * 60 * 1000;
@@ -46,6 +50,9 @@ const soundOn = () => read(SOUND_KEY) === "1";
 /** Only counts as on once the browser has actually granted permission. */
 const notifyOn = () => read(NOTIFY_KEY) === "1" && notificationPermission() === "granted";
 
+/** true when alerts will also arrive with the site closed */
+const pushOn = () => read(PUSH_KEY) === "1" && notifyOn();
+
 /* ── helpers ────────────────────────────────────────────────────────────── */
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -70,6 +77,7 @@ export default function BossTimer() {
 
   const sound = useSyncExternalStore(subscribe, soundOn, () => false);
   const notifications = useSyncExternalStore(subscribe, notifyOn, () => false);
+  const push = useSyncExternalStore(subscribe, pushOn, () => false);
 
   // The countdown runs off a monotonic clock seeded by the server's own
   // "seconds remaining", so a wrong clock on the visitor's device changes
@@ -144,13 +152,19 @@ export default function BossTimer() {
   const toggleNotifications = async () => {
     if (notifications) {
       write(NOTIFY_KEY, "0");
+      write(PUSH_KEY, "0");
+      void unsubscribeFromPush();
       return;
     }
+
     const granted = await requestNotifications();
     write(NOTIFY_KEY, granted ? "1" : "0");
-    if (granted) {
-      void notify("เปิดแจ้งเตือนแล้ว", "จะเตือนก่อนประตูบอสเปิด 1 นาที · Alerts are on", "sp-boss");
-    }
+    if (!granted) return;
+
+    // Register for push as well, so alerts still arrive with the site closed.
+    // If that fails we keep the in-page alerts rather than turning it all off.
+    write(PUSH_KEY, (await subscribeToPush()) ? "1" : "0");
+    void notify("เปิดแจ้งเตือนแล้ว", "จะเตือนก่อนประตูบอสเปิด 1 นาที · Alerts are on", "sp-boss");
   };
 
   if (!state?.enabled) return null;
@@ -180,32 +194,34 @@ export default function BossTimer() {
               ทุกนาทีที่ :00 และ :30 · On the clock
             </span>
 
-            <button
-              type="button"
-              onClick={toggleSound}
-              aria-pressed={sound}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
-                sound ? "bg-mint-600 text-white" : "bg-surface-3 text-ink-2 hover:text-ink"
-              }`}
-            >
-              {sound ? "🔔 เสียงเตือนเปิด · Sound on" : "🔕 เสียงเตือน · Sound"}
-            </button>
+          </div>
 
-            <button
-              type="button"
-              onClick={() => void toggleNotifications()}
-              aria-pressed={notifications}
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
+            <Switch
+              checked={sound}
+              onChange={toggleSound}
+              label="เสียงเตือน · Sound"
+              hint={sound ? "ดัง 3 ที ตอนเหลือ 1 นาที" : "ปิดอยู่ · off"}
+            />
+            <Switch
+              checked={notifications}
+              onChange={() => void toggleNotifications()}
+              label="แจ้งเตือน · Notify"
               title={
                 notificationPermission() === "denied"
                   ? "เบราว์เซอร์บล็อกการแจ้งเตือนไว้ ต้องไปเปิดในตั้งค่าเว็บไซต์"
                   : undefined
               }
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
-                notifications ? "bg-grape-500 text-white" : "bg-surface-3 text-ink-2 hover:text-ink"
-              }`}
-            >
-              {notifications ? "🔔 แจ้งเตือนเปิด · Notify on" : "💬 แจ้งเตือน · Notify"}
-            </button>
+              hint={
+                !notifications
+                  ? notificationPermission() === "denied"
+                    ? "เบราว์เซอร์บล็อกไว้ · blocked"
+                    : "ปิดอยู่ · off"
+                  : push
+                    ? "เตือนแม้ปิดแอป · works when closed"
+                    : "เฉพาะตอนเปิดเว็บไว้ · only while open"
+              }
+            />
           </div>
 
           <p className="mt-3 text-[12px] uppercase tracking-[0.14em] text-ink-3">
@@ -232,9 +248,10 @@ export default function BossTimer() {
 
           <p className="num mt-1 text-[11.5px] text-ink-3">รอบถัดไป · then {following.join(" · ")}</p>
 
-          {(sound || notifications) && (
-            <p className="mt-2 text-[11.5px] text-ink-3">
-              เตือนตอนเหลือ 1 นาที · Alerts one minute before it opens
+          {pushSupported() && notifications && !push && (
+            <p className="mt-2 max-w-md text-[11.5px] leading-relaxed text-ink-3">
+              บน iPhone ต้อง <b className="text-ink-2">ติดตั้งลงหน้าจอโฮมก่อน</b> ถึงจะเตือนตอนปิดแอปได้ ·
+              iOS needs the app installed to the home screen for that.
             </p>
           )}
         </div>
