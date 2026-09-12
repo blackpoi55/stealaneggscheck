@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import BiomeBanner from "./BiomeBanner";
+import ComingSoonBiome from "./ComingSoonBiome";
 import CollectionProgress from "./CollectionProgress";
 import { useCollected } from "./CollectTick";
 import EggCard from "./EggCard";
 import EggDialog from "./EggDialog";
 import { BROWSE_ANCHOR, biomeAnchor, useBrowse, type OwnedFilter, type SortId } from "./browse-context";
 import { BIOMES, BIOME_BY_ID, EGGS, RARITIES, RARITY_BY_ID, type Egg } from "@/data/steal-an-egg";
+import { UPCOMING_BIOMES } from "@/data/upcoming";
 
 const OWNED: { id: OwnedFilter; th: string; en: string }[] = [
   { id: "all", th: "ทั้งหมด", en: "All" },
@@ -85,6 +87,17 @@ export default function Explorer() {
   );
 
   const grouped = sort === "biome";
+
+  // The placeholder biome has no stats to filter on, so it shows in the plain
+  // grouped view and whenever the search actually names it.
+  const upcoming = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!grouped) return [];
+    if (!q) return UPCOMING_BIOMES;
+    return UPCOMING_BIOMES.filter((b) =>
+      [b.en, b.th, ...b.known.flatMap((k) => [k.en, k.th])].join(" ").toLowerCase().includes(q)
+    );
+  }, [grouped, query]);
 
   return (
     <section id={BROWSE_ANCHOR}>
@@ -205,7 +218,7 @@ export default function Explorer() {
         <span className="num font-semibold text-ink">{filtered.length}</span> eggs
       </p>
 
-      {filtered.length === 0 ? (
+      {filtered.length === 0 && upcoming.length === 0 ? (
         <div className="card rounded-[22px] px-6 py-20 text-center">
           <p className="text-4xl">🍬</p>
           <p className="headline mt-3 text-[17px] text-ink">ไม่พบไข่ที่ตรงกับตัวกรอง</p>
@@ -234,6 +247,10 @@ export default function Explorer() {
                 ))}
               </div>
             </section>
+          ))}
+
+          {upcoming.map((b) => (
+            <ComingSoonBiome key={b.id} biome={b} />
           ))}
         </div>
       ) : (
