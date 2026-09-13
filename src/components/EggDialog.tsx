@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
 import CollectTick, { useCollected } from "./CollectTick";
+import SideBadge from "./SideBadge";
 import {
   BIOME_BY_ID,
   RARITY_BY_ID,
@@ -139,6 +140,7 @@ export default function EggDialog({ egg, onClose }: { egg: Egg | null; onClose: 
           >
             {rarity.th} · {rarity.en}
           </span>
+          <SideBadge side={egg.side} className="ml-1.5 align-middle" />
 
           <h2 className="display mt-2.5 text-[1.75rem] text-ink">ไข่{egg.th}</h2>
           <p className="headline text-[15px] text-ink-2">{egg.en} Egg</p>

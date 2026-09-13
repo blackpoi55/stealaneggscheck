@@ -2,17 +2,13 @@
 
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { RARITIES, type BiomeId, type RarityId } from "@/data/steal-an-egg";
-import type { UpcomingBiomeId } from "@/data/upcoming";
 
 export type SortId = "biome" | "rarity" | "income-desc" | "income-asc" | "name";
 export type OwnedFilter = "all" | "collected" | "missing";
 export type TabId = "biome" | "limited";
 
 export const BROWSE_ANCHOR = "browse";
-/** Also covers the placeholder biomes, which use the same anchor shape. */
-export const biomeAnchor = (id: BiomeId | UpcomingBiomeId) => `biome-${id}`;
-
-export type JumpTarget = BiomeId | UpcomingBiomeId | "all" | "limited";
+export const biomeAnchor = (id: BiomeId) => `biome-${id}`;
 
 const SORT_IDS: SortId[] = ["biome", "rarity", "income-desc", "income-asc", "name"];
 const RARITY_IDS = new Set(RARITIES.map((r) => r.id));
@@ -58,7 +54,7 @@ interface BrowseState {
   dirty: boolean;
   reset: () => void;
   /** the nav navigates — this scrolls to a biome section, it does not filter */
-  jumpTo: (id: JumpTarget) => void;
+  jumpTo: (id: BiomeId | "all" | "limited") => void;
 }
 
 const Ctx = createContext<BrowseState | null>(null);
@@ -117,7 +113,7 @@ export function BrowseProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const jumpTo = useCallback(
-    (id: JumpTarget) => {
+    (id: BiomeId | "all" | "limited") => {
       // The two tabs never render at once, so switch first when the target
       // lives on the other one.
       const wanted: TabId = id === "limited" ? "limited" : "biome";
@@ -164,7 +160,7 @@ function afterPaint(fn: () => void) {
 }
 
 /** Scrolls a biome section into view. Returns false when it isn't rendered. */
-function scrollToSection(id: JumpTarget) {
+function scrollToSection(id: BiomeId | "all" | "limited") {
   const anchor = id === "all" ? BROWSE_ANCHOR : id === "limited" ? "limited" : biomeAnchor(id);
   const el = document.getElementById(anchor);
   if (!el) return false;

@@ -4,14 +4,13 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
-import { biomeAnchor, useBrowse, type JumpTarget } from "./browse-context";
-import { BIOMES, SITE, biomeImg } from "@/data/steal-an-egg";
+import { biomeAnchor, useBrowse } from "./browse-context";
+import { BIOMES, SITE, biomeImg, type BiomeId } from "@/data/steal-an-egg";
 import { limitedGroupImg } from "@/data/limited";
-import { UPCOMING_BIOMES } from "@/data/upcoming";
 
 export default function SiteNav() {
   const { jumpTo } = useBrowse();
-  const [active, setActive] = useState<JumpTarget>("all");
+  const [active, setActive] = useState<BiomeId | "all" | "limited">("all");
   const headerRef = useRef<HTMLElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
 
@@ -36,14 +35,13 @@ export default function SiteNav() {
       const filterH =
         parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--filter-h")) || 104;
       const y = window.scrollY + (headerRef.current?.offsetHeight ?? 112) + filterH + 60;
-      let current: JumpTarget = "all";
-      const passed = (id: string) => {
-        const el = document.getElementById(id);
-        return Boolean(el && el.getBoundingClientRect().top + window.scrollY <= y);
-      };
-      for (const b of BIOMES) if (passed(biomeAnchor(b.id))) current = b.id;
-      for (const b of UPCOMING_BIOMES) if (passed(biomeAnchor(b.id))) current = b.id;
-      if (passed("limited")) current = "limited";
+      let current: BiomeId | "all" | "limited" = "all";
+      for (const b of BIOMES) {
+        const el = document.getElementById(biomeAnchor(b.id));
+        if (el && el.getBoundingClientRect().top + window.scrollY <= y) current = b.id;
+      }
+      const limited = document.getElementById("limited");
+      if (limited && limited.getBoundingClientRect().top + window.scrollY <= y) current = "limited";
       setActive(current);
     };
     const onScroll = () => {
@@ -117,16 +115,6 @@ export default function SiteNav() {
                 th={b.th}
                 en={b.en}
                 img={biomeImg(b.id)}
-                accent={b.accent[0]}
-              />
-            ))}
-            {UPCOMING_BIOMES.map((b) => (
-              <BiomeChip
-                key={b.id}
-                active={active === b.id}
-                onClick={() => jumpTo(b.id)}
-                th={b.th}
-                en="New"
                 accent={b.accent[0]}
               />
             ))}

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import CollectTick, { useCollected } from "./CollectTick";
+import SideBadge from "./SideBadge";
 import {
   BIOME_BY_ID,
   RARITY_BY_ID,
@@ -71,6 +72,8 @@ export default function EggCard({
         >
           {rarity.en}
         </span>
+
+        <SideBadge side={egg.side} className="absolute bottom-2.5 left-3" />
 
         {/* sits above the stretched link */}
         <CollectTick id={egg.id} label={`${egg.th} / ${egg.en}`} className="absolute right-2.5 top-2.5 z-20" />

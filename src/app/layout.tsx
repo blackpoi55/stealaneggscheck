@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Thai } from "next/font/google";
 import ServiceWorker from "@/components/ServiceWorker";
+import { EGGS } from "@/data/steal-an-egg";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -18,8 +19,7 @@ const notoThai = Noto_Sans_Thai({
 });
 
 const TITLE = "ไข่ไหนอยู่ไบโอมไหน · Steal an Egg Biome Guide | SweetParadise";
-const DESCRIPTION =
-  "รวมไข่ทั้ง 88 ใบใน Steal an Egg แยกตามไบโอม พร้อมรูปไข่จริง เพ็ตจริง ระดับความหายาก รายได้ต่อวินาที และความเร็วที่ต้องใช้ — All 88 Steal an Egg eggs sorted by biome, with real art, rarity, income and speed requirements. สร้างโดยแมพ SweetParadise.";
+const DESCRIPTION = `รวมไข่ทั้ง ${EGGS.length} ใบใน Steal an Egg แยกตามไบโอม พร้อมรูปไข่จริง เพ็ตจริง ระดับความหายาก รายได้ต่อวินาที และความเร็วที่ต้องใช้ — All ${EGGS.length} Steal an Egg eggs sorted by biome, with real art, rarity, income and speed requirements. สร้างโดยแมพ SweetParadise.`;
 
 export const metadata: Metadata = {
   metadataBase: SITE_URL,

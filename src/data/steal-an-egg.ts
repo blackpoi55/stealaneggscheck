@@ -4,6 +4,7 @@
  * Sources:
  *  - Eldorado blog "All Eggs" + "All Pets Index"  (egg art, pet art, income per second)
  *  - IGN wiki "All Biomes"                        (guardians, recommended speed, speed rewards)
+ *  - IGN wiki "All Biomes" + Fandom wiki          (Angels & Demons: stats from IGN, art from Fandom)
  *
  * `cashReward` is not stored: every entry in both sources follows income x 100,
  * so it is derived in `cashReward()` below.
@@ -32,7 +33,8 @@ export type BiomeId =
   | "prehistoric"
   | "cosmic"
   | "cherry-blossom"
-  | "titan-temple";
+  | "titan-temple"
+  | "angels-demons";
 
 export interface Rarity {
   id: RarityId;
@@ -70,6 +72,10 @@ export interface Egg {
   income: number;
   /** permanent speed granted on first collection; null where the wiki has no figure */
   speedReward: number | null;
+  /** Angels & Demons only — which form of the biome the egg spawns in */
+  side?: "angel" | "demon";
+  /** income was derived from the listed cash reward, not stated directly */
+  derived?: boolean;
 }
 
 /**
@@ -224,6 +230,20 @@ export const BIOMES: Biome[] = [
     noteTh: "ไบโอมใหม่ล่าสุดและไกลที่สุดบนแมป มีเพ็ตที่ทำเงินสูงที่สุดในเกม",
     accent: ["#fb7185", "#4c0519"],
   },
+  {
+    id: "angels-demons",
+    order: 12,
+    en: "Angels & Demons",
+    th: "นางฟ้ากับปีศาจ",
+    speed: 20_000_000_000,
+    guardianEn: "Angel / Demon",
+    guardianTh: "นางฟ้า / ปีศาจ",
+    noteEn:
+      "Turns into either Angels or Demons each night, eight pets a side. A rare Merged form offers both at once with extra luck, and a secret shrine hides inside.",
+    noteTh:
+      "ทุกคืนจะกลายร่างเป็นฝั่งนางฟ้าหรือฝั่งปีศาจ ฝั่งละ 8 ตัว นาน ๆ ทีจะรวมร่างเป็นไบโอมผสมที่ได้ทั้งสองฝั่งพร้อมโชคเพิ่ม และมีศาลลับซ่อนอยู่ข้างใน",
+    accent: ["#fbbf24", "#7f1d1d"],
+  },
 ];
 
 export const BIOME_BY_ID = Object.fromEntries(BIOMES.map((b) => [b.id, b])) as Record<BiomeId, Biome>;
@@ -338,6 +358,27 @@ export const EGGS: Egg[] = [
   { id: "mutant-shark", biome: "titan-temple", rarity: "secret", en: "Mutant Shark", th: "ฉลามกลายพันธุ์", income: 215_000_000, speedReward: 4_100_000 },
   { id: "gorilla-king", biome: "titan-temple", rarity: "eternal", en: "Gorilla King", th: "ราชากอริลลา", income: 880_000_000, speedReward: 5_400_000 },
   { id: "nightflame", biome: "titan-temple", rarity: "divine", en: "Nightflame", th: "ไนท์เฟลม", income: 3_000_000_000, speedReward: 6_800_000 },
+  // ── Angels & Demons ─────────────────────────────────────────────────────
+  // One zone that turns Angel or Demon each night. Stats are IGN's; Fandom
+  // disagrees on Demon Hound ($25M/s) and the Secret speed reward (+30M), and
+  // IGN's figures are kept. No source states Divine income, so it is derived
+  // from IGN's $500B cash reward.
+  { id: "light-dove", biome: "angels-demons", side: "angel", rarity: "legendary", en: "Light Dove", th: "นกพิราบแห่งแสง", income: 225_000, speedReward: 3_000_000 },
+  { id: "flame-sprite", biome: "angels-demons", side: "demon", rarity: "legendary", en: "Flame Sprite", th: "ภูตเปลวไฟ", income: 225_000, speedReward: 3_000_000 },
+  { id: "winged-lamb", biome: "angels-demons", side: "angel", rarity: "mythic", en: "Winged Lamb", th: "ลูกแกะมีปีก", income: 1_200_000, speedReward: 4_000_000 },
+  { id: "toro", biome: "angels-demons", side: "demon", rarity: "mythic", en: "Toro", th: "โทโร่", income: 1_200_000, speedReward: 4_000_000 },
+  { id: "sacred-moth", biome: "angels-demons", side: "angel", rarity: "cosmic", en: "Sacred Moth", th: "ผีเสื้อกลางคืนศักดิ์สิทธิ์", income: 16_000_000, speedReward: 20_000_000 },
+  { id: "holy-peacock", biome: "angels-demons", side: "angel", rarity: "cosmic", en: "Holy Peacock", th: "นกยูงศักดิ์สิทธิ์", income: 25_000_000, speedReward: 20_000_000 },
+  { id: "demon-hound", biome: "angels-demons", side: "demon", rarity: "cosmic", en: "Demon Hound", th: "สุนัขปีศาจ", income: 16_000_000, speedReward: 20_000_000 },
+  { id: "imp", biome: "angels-demons", side: "demon", rarity: "cosmic", en: "Imp", th: "อิมป์", income: 25_000_000, speedReward: 20_000_000 },
+  { id: "pure-jellyfish", biome: "angels-demons", side: "angel", rarity: "secret", en: "Pure Jellyfish", th: "แมงกะพรุนบริสุทธิ์", income: 225_000_000, speedReward: 90_000_000 },
+  { id: "centaur", biome: "angels-demons", side: "angel", rarity: "secret", en: "Centaur", th: "เซนทอร์", income: 225_000_000, speedReward: 90_000_000 },
+  { id: "gargoyle", biome: "angels-demons", side: "demon", rarity: "secret", en: "Gargoyle", th: "การ์กอยล์", income: 225_000_000, speedReward: 90_000_000 },
+  { id: "razorfang", biome: "angels-demons", side: "demon", rarity: "secret", en: "RazorFang", th: "เรเซอร์แฟง", income: 225_000_000, speedReward: 90_000_000 },
+  { id: "pegasus", biome: "angels-demons", side: "angel", rarity: "eternal", en: "Pegasus", th: "เพกาซัส", income: 1_300_000_000, speedReward: 200_000_000 },
+  { id: "skeleton-horse", biome: "angels-demons", side: "demon", rarity: "eternal", en: "Skeleton Horse", th: "ม้าโครงกระดูก", income: 1_300_000_000, speedReward: 200_000_000 },
+  { id: "archangel", biome: "angels-demons", side: "angel", rarity: "divine", en: "ArchAngel", th: "อัครเทวดา", income: 5_000_000_000, speedReward: 600_000_000, derived: true },
+  { id: "world-burner", biome: "angels-demons", side: "demon", rarity: "divine", en: "World Burner", th: "เวิลด์ เบิร์นเนอร์", income: 5_000_000_000, speedReward: 600_000_000, derived: true },
 ];
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */

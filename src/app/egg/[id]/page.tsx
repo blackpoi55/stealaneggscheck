@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import CollectTick from "@/components/CollectTick";
 import Logo from "@/components/Logo";
+import SideBadge from "@/components/SideBadge";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   BIOME_BY_ID,
@@ -163,6 +164,7 @@ export default async function EggPage({ params }: { params: Promise<{ id: string
             >
               {rarity.th} · {rarity.en}
             </span>
+            <SideBadge side={egg.side} className="ml-1.5 align-middle" />
 
             <h1 className="display mt-2.5 text-[2.2rem] text-ink sm:text-[2.8rem]">ไข่{egg.th}</h1>
             <p className="headline text-[17px] text-ink-2">{egg.en} Egg</p>
