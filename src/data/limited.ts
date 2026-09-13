@@ -1,15 +1,17 @@
 /**
- * Limited pets — the 33 that never come from a biome nest.
+ * Limited pets — the ones that never come from a biome nest.
  *
  * Source: IGN wiki "All Eggs" (drop rates) + "All Pets" (income, speed, cash).
+ * Luminous art is from the Fandom wiki.
  *
- * The pets index in game counts these separately from the 88 biome eggs, and
- * 6 + 12 + 15 matches the "Unlocked: x/33" counter exactly.
+ * Before Update 4, 6 + 12 + 15 matched the in-game "Unlocked: x/33" counter
+ * exactly. Update 4 added the 12 Luminous pets; the new counter total is not
+ * confirmed yet.
  */
 
 import type { RarityId } from "./steal-an-egg";
 
-export type LimitedSource = "brainrot" | "monster" | "rift";
+export type LimitedSource = "brainrot" | "luminous" | "monster" | "rift";
 
 export interface LimitedGroup {
   id: LimitedSource;
@@ -54,11 +56,20 @@ export const LIMITED_GROUPS: LimitedGroup[] = [
     banner: false,
   },
   {
+    id: "luminous",
+    en: "Luminous Eggs",
+    th: "ไข่ลูมินัส",
+    howTh: "ซื้อด้วย Robux ในร้านค้า: 99 = 1 ฟอง, 249 = 3 ฟอง, 799 = 10 ฟอง, 3,499 = 50 ฟอง — มาแทนไข่มอนสเตอร์ในอัปเดต 4 แต่ละตัวมีโอกาส 1% สุ่มใหม่เป็นตัว Luminous ซึ่งทำเงินสูงกว่าตัวปกติมาก",
+    howEn: "Bought with Robux: 99 for one, 249 for three, 799 for ten, 3,499 for fifty. Replaced the Monster Egg in Update 4. Each pet has a 1% re-roll into its Luminous variant, worth far more than the base.",
+    accent: ["#22d3ee", "#164e63"],
+    banner: true,
+  },
+  {
     id: "monster",
     en: "Monster Eggs",
     th: "ไข่มอนสเตอร์",
-    howTh: "ซื้อด้วย Robux ในร้านค้า: 99 = 1 ฟอง, 249 = 3 ฟอง, 799 = 10 ฟอง, 3,499 = 50 ฟอง — ตัว Mecha คือเวอร์ชันหายากของแต่ละตัว ออก 1% เท่ากันหมด และทำเงินเป็น 2 เท่า",
-    howEn: "Bought with Robux: 99 for one, 249 for three, 799 for ten, 3,499 for fifty. Each Mecha is the rare variant of its base pet — 1% each, and worth double.",
+    howTh: "เลิกขายแล้ว — ถูกแทนด้วยไข่ลูมินัสในอัปเดต 4 · ตอนที่ยังขายราคา 99 Robux ต่อฟอง ตัว Mecha คือเวอร์ชันหายากของแต่ละตัว ออก 1% เท่ากันหมด และทำเงินเป็น 2 เท่า",
+    howEn: "No longer sold — replaced by the Luminous Egg in Update 4. It cost 99 Robux each. Each Mecha is the rare variant of its base pet — 1% each, and worth double.",
     accent: ["#f97316", "#7c2d12"],
     banner: true,
   },
@@ -83,6 +94,21 @@ export const LIMITED_PETS: LimitedPet[] = [
   { id: "strawberry-elephant", source: "brainrot", en: "Strawberry Elephant", th: "ช้างสตรอว์เบอร์รี", rarity: "eternal", income: 110_000_000, speedReward: 143_000, chance: 0, derived: true },
 
   // ── Monster (Robux shop) — no speed bonus on any of them ────────────────
+  // Luminous — IGN lists cash only ("Unknown" income, no speed), so income is
+  // cash / 100. A Luminous re-roll keeps its base pet's rarity, as Mecha does.
+  { id: "spike", source: "luminous", en: "Spike", th: "สไปค์", rarity: "legendary", income: 15_000, speedReward: 0, chance: 39, derived: true },
+  { id: "spirit-manta", source: "luminous", en: "Spirit Manta", th: "กระเบนวิญญาณ", rarity: "mythic", income: 75_000, speedReward: 0, chance: 24, derived: true },
+  { id: "abyss-shark", source: "luminous", en: "Abyss Shark", th: "ฉลามห้วงลึก", rarity: "cosmic", income: 2_500_000, speedReward: 0, chance: 18, derived: true },
+  { id: "electric-eel", source: "luminous", en: "Electric Eel", th: "ปลาไหลไฟฟ้า", rarity: "secret", income: 200_000_000, speedReward: 0, chance: 11, derived: true },
+  { id: "terra-snapper", source: "luminous", en: "Terra Snapper", th: "เทอร์ร่า สแนปเปอร์", rarity: "eternal", income: 750_000_000, speedReward: 0, chance: 6.5, derived: true },
+  { id: "cthulhu", source: "luminous", en: "Cthulhu", th: "คธูลู", rarity: "divine", income: 3_000_000_000, speedReward: 0, chance: 0.5, derived: true },
+  { id: "luminous-spike", source: "luminous", en: "Luminous Spike", th: "ลูมินัส สไปค์", rarity: "legendary", income: 350_000_000, speedReward: 0, chance: 1, derived: true },
+  { id: "luminous-spirit-manta", source: "luminous", en: "Luminous Spirit Manta", th: "ลูมินัส กระเบนวิญญาณ", rarity: "mythic", income: 500_000_000, speedReward: 0, chance: 1, derived: true },
+  { id: "luminous-abyss-shark", source: "luminous", en: "Luminous Abyss Shark", th: "ลูมินัส ฉลามห้วงลึก", rarity: "cosmic", income: 600_000_000, speedReward: 0, chance: 1, derived: true },
+  { id: "luminous-electric-eel", source: "luminous", en: "Luminous Electric Eel", th: "ลูมินัส ปลาไหลไฟฟ้า", rarity: "secret", income: 1_750_000_000, speedReward: 0, chance: 1, derived: true },
+  { id: "luminous-terra-snapper", source: "luminous", en: "Luminous Terra Snapper", th: "ลูมินัส เทอร์ร่า สแนปเปอร์", rarity: "eternal", income: 2_500_000_000, speedReward: 0, chance: 1, derived: true },
+  { id: "luminous-cthulhu", source: "luminous", en: "Luminous Cthulhu", th: "ลูมินัส คธูลู", rarity: "divine", income: 6_500_000_000, speedReward: 0, chance: 1, derived: true },
+
   { id: "scorpio", source: "monster", en: "Scorpio", th: "สกอร์ปิโอ", rarity: "legendary", income: 10_000, speedReward: 0, chance: 39 },
   { id: "froggo", source: "monster", en: "Froggo", th: "ฟร็อกโก", rarity: "mythic", income: 50_000, speedReward: 0, chance: 24, derived: true },
   { id: "crawler", source: "monster", en: "Crawler", th: "ครอว์เลอร์", rarity: "cosmic", income: 1_500_000, speedReward: 0, chance: 18, derived: true },

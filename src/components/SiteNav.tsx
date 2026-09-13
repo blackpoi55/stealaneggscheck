@@ -123,7 +123,7 @@ export default function SiteNav() {
               onClick={() => jumpTo("limited")}
               th="ลิมิเต็ด"
               en="Limited"
-              img={limitedGroupImg("monster")}
+              img={limitedGroupImg("luminous")}
               accent="#f97316"
             />
           </div>
