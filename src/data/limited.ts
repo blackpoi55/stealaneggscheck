@@ -4,9 +4,9 @@
  * Source: IGN wiki "All Eggs" (drop rates) + "All Pets" (income, speed, cash).
  * Luminous art is from the Fandom wiki.
  *
- * Before Update 4, 6 + 12 + 15 matched the in-game "Unlocked: x/33" counter
- * exactly. Update 4 added the 12 Luminous pets; the new counter total is not
- * confirmed yet.
+ * The pets index in game counts these separately from the biome eggs, and
+ * 6 + 12 + 12 + 15 matches its "Unlocked: x/45" counter exactly — checked in
+ * game after Update 4 added the 12 Luminous pets (it read x/33 before).
  */
 
 import type { RarityId } from "./steal-an-egg";
